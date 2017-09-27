@@ -1,15 +1,12 @@
 package wheelspeedjava;
 
-import ioio.lib.api.DigitalInput;
-import ioio.lib.api.IOIO;
 import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOConnectionManager.Thread;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.pc.IOIOConsoleApp;
-import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -19,7 +16,8 @@ public class reader extends IOIOConsoleApp {
     private int frontCount, rearCount = 0;
     private long nowTime;
     private String updateTime = "12:00:00.000";
-    private final SimpleDateFormat clockFormat = new SimpleDateFormat("HH:mm:ss.SSS");
+    private final SimpleDateFormat clockFormat = new SimpleDateFormat("HH:mm:ss,SSS");
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd.HHmm");
 
     public static void main(String[] args) throws Exception {
         new reader().go(args);
@@ -28,7 +26,6 @@ public class reader extends IOIOConsoleApp {
     @Override
     protected void run(String[] args) throws IOException {
         // this should be recording GPS, and the printing for RPM should happen in the looper
-        System.out.println("data,TIME,F.CT,F.RPM,R.CT,R.RPM,D.RPM");
         while (true) {
 
             try {
@@ -46,13 +43,13 @@ public class reader extends IOIOConsoleApp {
     public String getRearCount() {
         return Integer.toString(rearCount);
     }
-    
+
     // truncate the fraction 
     public String getRevs(double rpms) {
         String rpm = Double.toString(rpms);
         int point = rpm.indexOf('.');
         if (point > 0) {
-            return rpm.substring(0,point);
+            return rpm.substring(0, point);
         }
         return rpm;
     }
@@ -63,6 +60,8 @@ public class reader extends IOIOConsoleApp {
     }
 
     private class Looper extends BaseIOIOLooper {
+
+        private FileWriter writer;
         private WheelSensorReader frontReader;
         private WheelSensorReader rearReader;
         private WheelRPMcalculator frontRPM;
@@ -70,6 +69,14 @@ public class reader extends IOIOConsoleApp {
 
         @Override
         public void setup() throws ConnectionLostException {
+            updateTime = dateFormat.format(new Date());
+            try {
+                writer = new FileWriter("PickleData." + updateTime + "hours.log");
+                writer.write("Hr:Min:Sec,Millis,FrontCount,RearCount,FrontRPM,RearRPM,DeltaRPM\n");
+                writer.flush();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             frontReader = new WheelSensorReader(ioio_, WheelSensorReader.frontInput);
             frontReader.start();
             frontRPM = new WheelRPMcalculator();
@@ -91,31 +98,21 @@ public class reader extends IOIOConsoleApp {
             deltaRPMs = frontRPMs - rearRPMs;
 
             updateTime = clockFormat.format(nowTime);
-            
+
             if (frontRPMs > 0.0d || rearRPMs > 0.0d) {
-            System.out.println("data,"
-                    + updateTime + ","
-                    + getFrontCount() + ","
-                    + getRevs(frontRPMs) + ","
-                    + getRearCount() + ","
-                    + getRevs(rearRPMs) + ","
-                    + getRevs(deltaRPMs));
+                try {
+                    writer.write(updateTime + ","
+                            + getFrontCount() + ","
+                            + getRearCount() + ","
+                            + getRevs(frontRPMs) + ","
+                            + getRevs(rearRPMs) + ","
+                            + getRevs(deltaRPMs) + "\n");
+                    writer.flush();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                Thread.sleep(1000);
             }
-            /* only log if we're moving
-             if (!lastLat.equals(latitude) ||
-             !lastLong.equals(longitude) || 
-             !lastSpeed.equals(speed) )  {
-             // log the data
-             // "SYSTIME,LH,RH,GPSTIME,LAT,LONG,DIST,SPEED,F.RPM,D.RPM,R.RPM";
-             write.data(updateTime + "," + leftReading + "," + rightReading
-             + "," + gpsTime + "," + latitude + "," + longitude
-             + "," + distFromStart + "," + speed + "," + frontRevs
-             + "," + deltaRevs + "," + rearRevs);
-
-             }
-             */
-
-            Thread.sleep(1000);
         }
     }
 }
