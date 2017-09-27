@@ -31,9 +31,11 @@ public class WheelSensorReader extends Thread {
     public void run() {
         while (true) {
             try {
-                input.waitForValue(false); // low = false
-                count++;
-                input.waitForValue(true);  // high = true
+                // we increment the counter after the magnet leaves on 
+                //  the next revolution
+                input.waitForValue(true);  // high = true, magnet not close by
+                count++;                
+                input.waitForValue(false); // low = false, magnet is close by
             } catch (Exception e) {
                 e.printStackTrace();
             }

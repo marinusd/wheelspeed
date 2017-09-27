@@ -27,16 +27,10 @@ public class reader extends IOIOConsoleApp {
 
     @Override
     protected void run(String[] args) throws IOException {
+        // this should be recording GPS, and the printing for RPM should happen in the looper
         System.out.println("data,TIME,F.CT,F.RPM,R.CT,R.RPM,D.RPM");
         while (true) {
-            updateTime = clockFormat.format(nowTime);
-            System.out.println("data," 
-                    + updateTime + ","
-                    + getFrontCount() + ","
-                    + getFrontRevs() + ","
-                    + getRearCount() + ","
-                    + getRearRevs() + ","
-                    + getDeltaRevs());
+
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
@@ -77,7 +71,6 @@ public class reader extends IOIOConsoleApp {
         private WheelRPMcalculator frontRPM;
         private WheelRPMcalculator rearRPM;
 
-
         @Override
         public void setup() throws ConnectionLostException {
             frontReader = new WheelSensorReader(ioio_, WheelSensorReader.frontInput);
@@ -94,11 +87,22 @@ public class reader extends IOIOConsoleApp {
             nowTime = System.currentTimeMillis();
             frontCount = frontReader.getCount();
             rearCount = rearReader.getCount();
-            
+
             frontRPMs = frontRPM.getRPM(nowTime, frontCount);
             rearRPMs = rearRPM.getRPM(nowTime, rearCount);
             deltaRPMs = frontRPMs - rearRPMs;
 
+            updateTime = clockFormat.format(nowTime);
+            
+            if (frontRPMs > 0.0d || rearRPMs > 0.0d) {
+            System.out.println("data,"
+                    + updateTime + ","
+                    + getFrontCount() + ","
+                    + getFrontRevs() + ","
+                    + getRearCount() + ","
+                    + getRearRevs() + ","
+                    + getDeltaRevs());
+            }
             /* only log if we're moving
              if (!lastLat.equals(latitude) ||
              !lastLong.equals(longitude) || 
@@ -113,7 +117,7 @@ public class reader extends IOIOConsoleApp {
              }
              */
 
-            Thread.sleep(1333);
+            Thread.sleep(1000);
         }
     }
 }
