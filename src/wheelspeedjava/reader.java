@@ -71,7 +71,7 @@ public class reader extends IOIOConsoleApp {
         public void setup() throws ConnectionLostException {
             updateTime = dateFormat.format(new Date());
             try {
-                writer = new FileWriter("PickleData." + updateTime + "hours.log");
+                writer = new FileWriter("PickleData." + updateTime + "hours.csv");
                 writer.write("Hr:Min:Sec,Millis,FrontCount,RearCount,FrontRPM,RearRPM,DeltaRPM\n");
                 writer.flush();
             } catch (Exception e) {
