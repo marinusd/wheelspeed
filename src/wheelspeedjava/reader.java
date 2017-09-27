@@ -19,7 +19,7 @@ public class reader extends IOIOConsoleApp {
     private int frontCount, rearCount = 0;
     private long nowTime;
     private String updateTime = "12:00:00.000";
-    private SimpleDateFormat clockFormat = new SimpleDateFormat("HH:mm:ss.SSS");
+    private final SimpleDateFormat clockFormat = new SimpleDateFormat("HH:mm:ss.SSS");
 
     public static void main(String[] args) throws Exception {
         new reader().go(args);
@@ -32,7 +32,7 @@ public class reader extends IOIOConsoleApp {
         while (true) {
 
             try {
-                Thread.sleep(2000);
+                Thread.sleep(12000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -46,17 +46,15 @@ public class reader extends IOIOConsoleApp {
     public String getRearCount() {
         return Integer.toString(rearCount);
     }
-
-    public String getFrontRevs() {
-        return Double.toString(frontRPMs); //.split(".")[0];
-    }
-
-    public String getRearRevs() {
-        return Double.toString(rearRPMs);//.split(".")[0];
-    }
-
-    public String getDeltaRevs() {
-        return Double.toString(deltaRPMs);//.split(".")[0];
+    
+    // truncate the fraction 
+    public String getRevs(double rpms) {
+        String rpm = Double.toString(rpms);
+        int point = rpm.indexOf('.');
+        if (point > 0) {
+            return rpm.substring(0,point);
+        }
+        return rpm;
     }
 
     @Override
@@ -65,7 +63,6 @@ public class reader extends IOIOConsoleApp {
     }
 
     private class Looper extends BaseIOIOLooper {
-
         private WheelSensorReader frontReader;
         private WheelSensorReader rearReader;
         private WheelRPMcalculator frontRPM;
@@ -88,6 +85,7 @@ public class reader extends IOIOConsoleApp {
             frontCount = frontReader.getCount();
             rearCount = rearReader.getCount();
 
+            // these are doubles
             frontRPMs = frontRPM.getRPM(nowTime, frontCount);
             rearRPMs = rearRPM.getRPM(nowTime, rearCount);
             deltaRPMs = frontRPMs - rearRPMs;
@@ -98,10 +96,10 @@ public class reader extends IOIOConsoleApp {
             System.out.println("data,"
                     + updateTime + ","
                     + getFrontCount() + ","
-                    + getFrontRevs() + ","
+                    + getRevs(frontRPMs) + ","
                     + getRearCount() + ","
-                    + getRearRevs() + ","
-                    + getDeltaRevs());
+                    + getRevs(rearRPMs) + ","
+                    + getRevs(deltaRPMs));
             }
             /* only log if we're moving
              if (!lastLat.equals(latitude) ||
