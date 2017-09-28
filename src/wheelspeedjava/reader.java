@@ -12,8 +12,7 @@ import java.util.Date;
 
 public class reader extends IOIOConsoleApp {
 
-    private double frontRPMs, rearRPMs, deltaRPMs = 0.0d;
-    private int frontCount, rearCount = 0;
+    private float frontRPMs, rearRPMs, deltaRPMs = 0.0f;
     private long nowTime;
     private String updateTime = "12:00:00.000";
     private final SimpleDateFormat clockFormat = new SimpleDateFormat("HH:mm:ss,SSS");
@@ -25,31 +24,29 @@ public class reader extends IOIOConsoleApp {
 
     @Override
     protected void run(String[] args) throws IOException {
-        // this should be recording GPS, and the printing for RPM should happen in the looper
+        // this should be doing Screen Display for speed and rear rpm?
+        // recording GPS and RPM should happen in the looper
         while (true) {
-
+            if (frontRPMs > 0f || rearRPMs > 0f) {
+                System.out.println("==========" + updateTime + "===========\n"
+                        + "Front: " + getRevs(frontRPMs) + "\n"
+                        + "Rear: " + getRevs(rearRPMs) + ",\n"
+                        + "Delta: " + getRevs(deltaRPMs));
+            }
             try {
-                Thread.sleep(12000);
+                Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public String getFrontCount() {
-        return Integer.toString(frontCount);
-    }
-
-    public String getRearCount() {
-        return Integer.toString(rearCount);
-    }
-
-    // truncate the fraction 
-    public String getRevs(double rpms) {
-        String rpm = Double.toString(rpms);
+    // include only the tenths of the fraction 
+    public String getRevs(float rpms) {
+        String rpm = Float.toString(rpms);
         int point = rpm.indexOf('.');
         if (point > 0) {
-            return rpm.substring(0, point);
+            rpm = rpm.substring(0, point + 2);
         }
         return rpm;
     }
@@ -64,46 +61,35 @@ public class reader extends IOIOConsoleApp {
         private FileWriter writer;
         private WheelSensorReader frontReader;
         private WheelSensorReader rearReader;
-        private WheelRPMcalculator frontRPM;
-        private WheelRPMcalculator rearRPM;
 
         @Override
         public void setup() throws ConnectionLostException {
             updateTime = dateFormat.format(new Date());
             try {
                 writer = new FileWriter("PickleData." + updateTime + "hours.csv");
-                writer.write("Hr:Min:Sec,Millis,FrontCount,RearCount,FrontRPM,RearRPM,DeltaRPM\n");
+                writer.write("Hr:Min:Sec,Millis,FrontRPM,RearRPM,DeltaRPM\n");
                 writer.flush();
             } catch (Exception e) {
                 e.printStackTrace();
             }
             frontReader = new WheelSensorReader(ioio_, WheelSensorReader.frontInput);
-            frontReader.start();
-            frontRPM = new WheelRPMcalculator();
             rearReader = new WheelSensorReader(ioio_, WheelSensorReader.rearInput);
-            rearReader.start();
-            rearRPM = new WheelRPMcalculator();
-            //write.syslog("Looper setup complete");
+            System.out.println("Looper setup complete");
         }
 
         @Override
         public void loop() throws ConnectionLostException, InterruptedException {
             nowTime = System.currentTimeMillis();
-            frontCount = frontReader.getCount();
-            rearCount = rearReader.getCount();
-
-            // these are doubles
-            frontRPMs = frontRPM.getRPM(nowTime, frontCount);
-            rearRPMs = rearRPM.getRPM(nowTime, rearCount);
-            deltaRPMs = frontRPMs - rearRPMs;
-
             updateTime = clockFormat.format(nowTime);
 
-            if (frontRPMs > 0.0d || rearRPMs > 0.0d) {
+            // these are floats
+            frontRPMs = frontReader.getRPM();
+            rearRPMs = rearReader.getRPM();
+            deltaRPMs = frontRPMs - rearRPMs;
+
+            if (frontRPMs > 0f || rearRPMs > 0f) {
                 try {
                     writer.write(updateTime + ","
-                            + getFrontCount() + ","
-                            + getRearCount() + ","
                             + getRevs(frontRPMs) + ","
                             + getRevs(rearRPMs) + ","
                             + getRevs(deltaRPMs) + "\n");
@@ -111,7 +97,7 @@ public class reader extends IOIOConsoleApp {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                Thread.sleep(1000);
+                Thread.sleep(500);
             }
         }
     }

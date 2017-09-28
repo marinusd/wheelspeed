@@ -1,44 +1,36 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package wheelspeedjava;
 
-import ioio.lib.api.DigitalInput;
 import ioio.lib.api.IOIO;
-import ioio.lib.api.exception.ConnectionLostException;
+import ioio.lib.api.DigitalInput;
+import ioio.lib.api.PulseInput;
 
-public class WheelSensorReader extends Thread {
+public class WheelSensorReader {
     public static int frontInput = 11;
     public static int rearInput  = 13;
-    private int count = 0;
-    private DigitalInput input;
+    private float rpm = 0f;
+    private PulseInput pulse;
 
-    public int getCount() {
-        return count;
+    float getRPM() {
+        rpm = 0f;
+        try {
+            rpm = pulse.getFrequency() * 60f;  // getFrequency() gives a float
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rpm;
     }
 
-    public WheelSensorReader(IOIO ioio_, int pin) {
-        System.err.println("WheelSensorReader is being created for pin " + pin);
+    WheelSensorReader(IOIO ioio_, int pin) {
+        DigitalInput.Spec pinPullUp = new DigitalInput.Spec(pin,DigitalInput.Spec.Mode.PULL_UP);
+        PulseInput.ClockRate rate_2MHz = PulseInput.ClockRate.RATE_2MHz;
+        PulseInput.PulseMode freq_scale_4 = PulseInput.PulseMode.FREQ_SCALE_4;
+        boolean doublePrecision = true;
+        System.out.println("WheelSensorReader is being created for pin " + pin);
         try {
-            input = ioio_.openDigitalInput(pin, DigitalInput.Spec.Mode.PULL_UP);
-        } catch (ConnectionLostException e) {
+            pulse = ioio_.openPulseInput(pinPullUp, rate_2MHz, freq_scale_4, doublePrecision);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    @Override
-    public void run() {
-        while (true) {
-            try {
-                // we increment the counter after the magnet leaves on 
-                //  the next revolution
-                input.waitForValue(true);  // high = true, magnet not close by
-                count++;                
-                input.waitForValue(false); // low = false, magnet is close by
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }
