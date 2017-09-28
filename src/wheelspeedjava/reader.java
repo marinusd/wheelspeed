@@ -12,7 +12,7 @@ import java.util.Date;
 
 public class reader extends IOIOConsoleApp {
 
-    private float frontRPMs, rearRPMs, deltaRPMs = 0.0f;
+    private float frontRPMs, prevF, rearRPMs, prevR, deltaRPMs = 0.0f;
     private long nowTime;
     private String updateTime = "12:00:00.000";
     private final SimpleDateFormat clockFormat = new SimpleDateFormat("HH:mm:ss,SSS");
@@ -22,12 +22,17 @@ public class reader extends IOIOConsoleApp {
         new reader().go(args);
     }
 
+    private boolean hasChanged() {
+        return (    (frontRPMs > 0f || rearRPMs > 0f) && 
+                (frontRPMs != prevF || rearRPMs != prevR));
+    }
+    
     @Override
     protected void run(String[] args) throws IOException {
         // this should be doing Screen Display for speed and rear rpm?
         // recording GPS and RPM should happen in the looper
         while (true) {
-            if (frontRPMs > 0f || rearRPMs > 0f) {
+            if (hasChanged()) {
                 System.out.println("==========" + updateTime + "===========\n"
                         + "Front: " + getRevs(frontRPMs) + "\n"
                         + "Rear: " + getRevs(rearRPMs) + ",\n"
@@ -87,7 +92,7 @@ public class reader extends IOIOConsoleApp {
             rearRPMs = rearReader.getRPM();
             deltaRPMs = frontRPMs - rearRPMs;
 
-            if (frontRPMs > 0f || rearRPMs > 0f) {
+            if (hasChanged())  {
                 try {
                     writer.write(updateTime + ","
                             + getRevs(frontRPMs) + ","
@@ -97,8 +102,10 @@ public class reader extends IOIOConsoleApp {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                Thread.sleep(500);
             }
+            prevF = frontRPMs;
+            prevR = rearRPMs;
+            Thread.sleep(500);
         }
     }
 }
