@@ -3,3 +3,4 @@
 /nbproject/private
 *.class
 *.csv
+.DS_Store

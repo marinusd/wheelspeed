@@ -21,13 +21,13 @@ public class WheelSensorReader {
     }
 
     WheelSensorReader(IOIO ioio_, int pin) {
-        DigitalInput.Spec pinPullUp = new DigitalInput.Spec(pin,DigitalInput.Spec.Mode.PULL_UP);
-        PulseInput.ClockRate rate_2MHz = PulseInput.ClockRate.RATE_2MHz;
-        PulseInput.PulseMode freq_scale_4 = PulseInput.PulseMode.FREQ_SCALE_4;
+        DigitalInput.Spec pinSpec = new DigitalInput.Spec(pin,DigitalInput.Spec.Mode.PULL_UP);
+        PulseInput.ClockRate rate = PulseInput.ClockRate.RATE_2MHz;
+        PulseInput.PulseMode freq = PulseInput.PulseMode.FREQ; //_SCALE_4;
         boolean doublePrecision = true;
         System.out.println("WheelSensorReader is being created for pin " + pin);
         try {
-            pulse = ioio_.openPulseInput(pinPullUp, rate_2MHz, freq_scale_4, doublePrecision);
+            pulse = ioio_.openPulseInput(pinSpec, rate, freq, doublePrecision);
         } catch (Exception e) {
             e.printStackTrace();
         }
