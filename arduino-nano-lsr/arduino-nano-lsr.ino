@@ -23,8 +23,7 @@ const int pAFR = 6; // AFR, AirFuelRatio, O2 sensor
 int AFR, FP, FT, MAP, GP, LRH, RRH = 0;
 int loopct = 0;
 
-void setup ()
-  {
+void setup () {
   Serial.begin(9600);  // we only do output
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -47,13 +46,11 @@ void setup ()
 } // end of setup
 
 // ISRs for wheel speed sensors
-void frontPulseISR ()
-  {
+void frontPulseISR () {
   frontCount++;
   frontMicros = micros();
   }
-void rearPulseISR ()
-  {
+void rearPulseISR () {
   rearCount++;
   rearMicros = micros();
   }
@@ -103,8 +100,7 @@ void printOutput () {
   Serial.println(GP);
 }
 
-void loop ()
-  {
+void loop () {
   loopct++;
   if (loopct >= 40) { printHeader(); loopct = 0; }
   // get wheel speeds
