@@ -1,7 +1,7 @@
-// wheel sensor vars
-const int D2 = 2;  //frontWheelSensorPin
-const int D3 = 3;  //rearWheelSensorPin
-
+// wheel sensor pins - digital
+const int pFW = 2; //frontWheelSensorPin
+const int pRW = 3; //rearWheelSensorPin
+// volatiles force loading from memory not registers. Required b/c interrupts.
 volatile unsigned int frontCount, rearCount = 0u;
 unsigned int nowFrontCount, prevFrontCount, deltaFrontCount = 0u;
 unsigned int nowRearCount, prevRearCount, deltaRearCount = 0u;
@@ -9,15 +9,18 @@ volatile unsigned long frontMicros, rearMicros = 0ul;
 unsigned long nowFrontMicros, prevFrontMicros, deltaFrontMicros = 0ul;
 unsigned long prevRearMicros, nowRearMicros, deltaRearMicros    = 0ul;
 
-// rideHeightSensors are 3.3v, get them with a divider
-const int pA0 = 0; // AFR, AirFuelRatio, O2 sensor
-const int pA1 = 1; // FP, FuelPressure
-const int pA2 = 2; // FT, FuelTemperature
-const int pA3 = 3; // MAP, ManifoldAbsolutePressure
-const int pA4 = 4; // LRH, left ride height
-const int pA5 = 5; // RRH, right ride height
+// analog (ADC) pins
+// rideHeightSensors are 3.3v
+const int pRRH = 0; // RRH, right ride height
+const int pLRH = 1; // LRH, left ride height
+// other sensors are 5v
+const int pFT  = 2; // FT, FuelTemperature
+const int pFP  = 3; // FP, FuelPressure
+const int pGP  = 4; // GP, GearPosition
+const int pMAP = 5; // MAP, ManifoldAbsolutePressure
+const int pAFR = 6; // AFR, AirFuelRatio, O2 sensor
 // the analogReads() return ints between 0-1023
-int AFR, FP, FT, MAP, LRH, RRH = 0;
+int AFR, FP, FT, MAP, GP, LRH, RRH = 0;
 int loopct = 0;
 
 void setup ()
@@ -27,17 +30,18 @@ void setup ()
     ; // wait for serial port to connect. Needed for native USB port only
   }
   Serial.print("Starting setup...");
-  pinMode(D2, INPUT_PULLUP);  // frontWheelSensorPin
-  attachInterrupt(digitalPinToInterrupt(D2), frontPulseISR, RISING);
-  pinMode(D3, INPUT_PULLUP);  // rearWheelSensorPin
-  attachInterrupt(digitalPinToInterrupt(D3), rearPulseISR, RISING);
+  pinMode(pFW, INPUT_PULLUP);  // frontWheelSensorPin
+  attachInterrupt(digitalPinToInterrupt(pFW), frontPulseISR, RISING);
+  pinMode(pRW, INPUT_PULLUP);  // rearWheelSensorPin
+  attachInterrupt(digitalPinToInterrupt(pRW), rearPulseISR, RISING);
   // do initial reads on the analog pins
-  analogRead(pA0);
-  analogRead(pA1);
-  analogRead(pA2);
-  analogRead(pA3);
-  analogRead(pA4);
-  analogRead(pA5);
+  analogRead(pRRH);
+  analogRead(pLRH);
+  analogRead(pFT);
+  analogRead(pFP);
+  analogRead(pGP);
+  analogRead(pMAP);
+  analogRead(pAFR);
   Serial.println(" Finished.");
   printHeader();
 } // end of setup
@@ -78,7 +82,8 @@ void printHeader() {
   Serial.print("FT"); Serial.print(',');
   Serial.print("MAP"); Serial.print(',');
   Serial.print("LRH"); Serial.print(',');
-  Serial.println("RRH");
+  Serial.print("RRH");  Serial.print(',');
+  Serial.println("GP");
 }
 
 void printOutput () {
@@ -94,7 +99,8 @@ void printOutput () {
   Serial.print(FT); Serial.print(',');
   Serial.print(MAP); Serial.print(',');
   Serial.print(LRH); Serial.print(',');
-  Serial.println(RRH);
+  Serial.print(RRH); Serial.print(',');
+  Serial.println(GP);
 }
 
 void loop ()
@@ -109,15 +115,17 @@ void loop ()
   nowRearMicros  = rearMicros;
   interrupts ();
   updateWheelValues();
-  // gather the other inputs
-  AFR = analogRead(pA0);
-  FP  = analogRead(pA1);  // fuel pressure
-  FT  = analogRead(pA2);  // fuel temperature
-  MAP = analogRead(pA3);
-  LRH = analogRead(pA4);  // left ride height
-  RRH = analogRead(pA5);  // right ride height
+  // gather the ADC inputs. The values returned are 0-1023 based on voltage.
+  RRH = analogRead(pRRH); // right ride height
+  LRH = analogRead(pLRH); // left ride height
+  FT  = analogRead(pFT);  // fuel temperature
+  FP  = analogRead(pFP);  // fuel pressure
+  GP  = analogRead(pGP);  // gear position
+  MAP = analogRead(pMAP); // manifold absolute pressure
+  AFR = analogRead(pAFR); // Lambda, O2 sensor
+
   // send ze data
   printOutput();
-  delay(500);
+  delay(300);
   }  // end of loop
 
