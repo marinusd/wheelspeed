@@ -40,23 +40,23 @@ void setup ()
   
   // pullup the unused analog and digital pins 
   // 0&1 are serial, 2&3 are wheel sensor 
-  digitalWrite(4, INPUT_PULLUP);
-  digitalWrite(5, INPUT_PULLUP);
-  digitalWrite(6, INPUT_PULLUP);
-  digitalWrite(7, INPUT_PULLUP);
-  digitalWrite(8, INPUT_PULLUP);
-  digitalWrite(9, INPUT_PULLUP);  
-  digitalWrite(10, INPUT_PULLUP);
-  digitalWrite(11, INPUT_PULLUP);
-  digitalWrite(12, INPUT_PULLUP);
+  pinMode(4, INPUT_PULLUP);
+  pinMode(5, INPUT_PULLUP);
+  pinMode(6, INPUT_PULLUP);
+  pinMode(7, INPUT_PULLUP);
+  pinMode(8, INPUT_PULLUP);
+  pinMode(9, INPUT_PULLUP);  
+  pinMode(10, INPUT_PULLUP);
+  pinMode(11, INPUT_PULLUP);
+  pinMode(12, INPUT_PULLUP);
   // analogs            
   // A1&A2 are ride height sensor
-  digitalWrite(A0, INPUT_PULLUP);
-  digitalWrite(A3, INPUT_PULLUP);
-  digitalWrite(A4, INPUT_PULLUP);
-  digitalWrite(A5, INPUT_PULLUP);
-  digitalWrite(A6, INPUT_PULLUP);
-  digitalWrite(A7, INPUT_PULLUP);
+  pinMode(A0, INPUT_PULLUP);
+  pinMode(A3, INPUT_PULLUP);
+  pinMode(A4, INPUT_PULLUP);
+  pinMode(A5, INPUT_PULLUP);
+  pinMode(A6, INPUT_PULLUP);
+  pinMode(A7, INPUT_PULLUP);
 
   Serial.println(" Finished.");
   printHeader();
