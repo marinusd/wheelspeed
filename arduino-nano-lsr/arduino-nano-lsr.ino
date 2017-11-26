@@ -10,7 +10,8 @@ unsigned long nowFrontMicros, prevFrontMicros, deltaFrontMicros = 0ul;
 unsigned long prevRearMicros, nowRearMicros, deltaRearMicros    = 0ul;
 // the analogReads() return ints between 0-1023
 int LRH, RRH = 0;
-int loopct = 0;
+int incomingByte = 0;
+char command = 'z';  // unassigned char
 
 // wheel sensor pins - digital
 const int pFW = 2; //frontWheelSensorPin
@@ -85,6 +86,20 @@ void updateWheelValues() {
   prevRearMicros  = nowRearMicros;
 }
 
+void collectReadings() {
+  // get wheel speeds
+  noInterrupts ();  // dont allow changes while we read the volatiles
+  nowFrontCount  = frontCount;
+  nowFrontMicros = frontMicros;
+  nowRearCount   = rearCount;
+  nowRearMicros  = rearMicros;
+  interrupts ();
+  // gather the ADC inputs. The values returned are 0-1023 based on voltage.
+  RRH = analogRead(pRRH); // right ride height
+  LRH = analogRead(pLRH); // left ride height
+  updateWheelValues();    // prepared for printing
+}
+
 void printHeader() {
   Serial.print("millis"); Serial.print(',');
   Serial.print("frontCount"); Serial.print(',');
@@ -98,6 +113,7 @@ void printHeader() {
 }
 
 void printOutput () {
+  collectReadings();
   Serial.print(millis()); Serial.print(',');
   Serial.print(nowFrontCount); Serial.print(',');
   Serial.print(deltaFrontCount); Serial.print(',');
@@ -110,25 +126,26 @@ void printOutput () {
 }
 
 void loop ()
-{
-  loopct++;
-  if (loopct >= 40) {
-    printHeader();
-    loopct = 0;
+{ 
+  // we listen for a command   
+  if (Serial.available() > 0) {
+    // Serial.println("Have input");
+    // throw away all but the last command byte
+    while (Serial.available() > 0) {
+      incomingByte = Serial.read();
+      if (incomingByte != 10) {  // strip final line feed for IDE Serial Monitor
+        command = incomingByte;
+      }
+    }
+    // we have a Byte - what is it?
+    //Serial.print("Command: "); Serial.println(command);
+    if (command == 'd') {
+      printOutput();
+    } else if (command == 'h') {
+      printHeader();
+    } else {
+      Serial.print(" ? Send h for header or d for data. Received: "); Serial.println(command);
+    }
   }
-  // get wheel speeds
-  noInterrupts ();  // dont allow changes while we read the volatiles
-  nowFrontCount  = frontCount;
-  nowFrontMicros = frontMicros;
-  nowRearCount   = rearCount;
-  nowRearMicros  = rearMicros;
-  interrupts ();
-  updateWheelValues();
-  // gather the ADC inputs. The values returned are 0-1023 based on voltage.
-  RRH = analogRead(pRRH); // right ride height
-  LRH = analogRead(pLRH); // left ride height
-
-  // send ze data
-  printOutput();
-  delay(200);
+  delay(100); // tenth of a second
 }  // end of loop
