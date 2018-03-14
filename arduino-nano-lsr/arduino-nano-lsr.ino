@@ -108,7 +108,7 @@ void updateDeltaWheelValues() {
   prevRearMicros  = nowRearMicros;
 }
 
-// this is the main data collection method. It'll get called every loop.
+// this is the main data collection method. 
 void collectReadings() {
   // get wheel sensor data 
   noInterrupts ();  // dont allow changes while we read the volatiles
