@@ -4,6 +4,7 @@
 // Digital Pins
 // Pins 0 & 1 are for the UART to communicate with the rPi.
 // Pins 2 & 3 are interrupt-driven by Hall Effect sensors.
+// Pin 13 drives the on-board user LED.
 // No other digital pins are used.
 
 // Wheel Speed sensors are Hall Effect. The pulses trigger interrupts because we'd like to count every pulse. 
@@ -19,6 +20,10 @@ unsigned long nowRearMicros,  prevRearMicros,  deltaRearMicros  = 0ul;
 // wheel sensor pins - digital
 const int pinFW = 2; //frontWheelSensorPin
 const int pinRW = 3; //rearWheelSensorPin
+// sending-data
+const int ledPin =  LED_BUILTIN; // fetches the number of the LED pin
+
+
 
 // Analog Pins
 //  analogRead() returns ints between 0-1023
@@ -58,7 +63,10 @@ void setup ()
   attachInterrupt(digitalPinToInterrupt(pinFW), frontPulseISR, RISING); // as the magnet leaves, voltage rises
   pinMode(pinRW, INPUT_PULLUP);  // rearWheelSensorPin
   attachInterrupt(digitalPinToInterrupt(pinRW), rearPulseISR, RISING);
- 
+
+  // will be the only sign something is working; serial through the UART does not blink the lights
+  pinMode(ledPin, OUTPUT);
+
   // pullup the unused digital pins 
   // 0&1 are serial, 2&3 are wheel sensor 
   pinMode(4, INPUT_PULLUP);
@@ -175,7 +183,6 @@ void loop ()
 { 
   // we check for an incoming command   
   if (Serial.available() > 0) {
-    // Serial.println("Have input");
     
     // throw away all but the last command byte
     while (Serial.available() > 0) {
@@ -184,19 +191,25 @@ void loop ()
         command = incomingByte;
       }
     }
+    digitalWrite(ledPin, HIGH); // showing we're doing something
     
     // we have a Byte - what is it?
-    //Serial.print("Command: "); Serial.println(command);
     if (command == 'd') {
       printOutput();  // this also does the reads()
+
     } else if (command == 'h') {
       printHeader();
+
     } else {
       Serial.print(" ? Send h for header or d for data. Received: "); Serial.println(command);
     }
     
   } // the end of the if; we come here immediately when there's no incoming command 
+
   delay(100); // tenth of a second
+  digitalWrite(ledPin, LOW); // this may already be off
+
 }  // end of loop()
+
 
 // fin
