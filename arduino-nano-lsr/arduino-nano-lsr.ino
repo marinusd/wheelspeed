@@ -24,7 +24,6 @@ const int pinRW = 3; //rearWheelSensorPin
 const int ledPin =  LED_BUILTIN; // fetches the number of the LED pin
 
 
-
 // Analog Pins
 //  analogRead() returns ints between 0-1023
 
@@ -78,14 +77,6 @@ void setup ()
   pinMode(10, INPUT_PULLUP);
   pinMode(11, INPUT_PULLUP);
   pinMode(12, INPUT_PULLUP);
-  // analogs            
-  // A0&A1 are ride height sensor
-  //pinMode(A2, INPUT_PULLUP);
-  //pinMode(A3, INPUT_PULLUP);
-  //pinMode(A4, INPUT_PULLUP);
-  //pinMode(A5, INPUT_PULLUP);
-  //pinMode(A6, INPUT_PULLUP);
-  //pinMode(A7, INPUT_PULLUP);
 
   Serial.println(" Finished.");
   printHeader();
