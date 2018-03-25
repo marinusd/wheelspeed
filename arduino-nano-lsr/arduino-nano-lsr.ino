@@ -29,20 +29,23 @@ const int ledPin =  LED_BUILTIN; // fetches the number of the LED pin
 
 // rideHeightSensors - analog, 0V-3.3V return
 int rawLeftRideHeight, rawRightRideHeight = 0;  
-const int pinRightRideHeight = A0; 
-const int pinLeftRideHeight  = A1; 
+const int pinRightRideHeight = A0; // small diameter white
+const int pinLeftRideHeight  = A1; // small diameter green
+
+// 0V-5V input pins 
+int rawAirFuelRatio, rawManifoldAbsolutePressure;
+const int pinManifoldAbsolutePressure = A2; //grey
+const int pinAirFuelRatio             = A3; // large green
 
 // voltage divider pins; feed 5V in, get something less back
 int rawFuelPressure, rawFuelTemperature, rawGearPosition = 0;
-const int pinFuelPressure    = A2; 
-const int pinFuelTemperature = A3; 
-const int pinGearPosition    = A4; 
+const int pinGearPosition    = A4; // small diameter yellow
+const int pinFuelPressure    = A5; // orange
+const int pinFuelTemperature = A6; // blue
 
-// 0V-5V input pins 
-int rawAirFuelRatio, rawManifoldAbsolutePressure, rawExhaustGasTemperature = 0;
-const int pinAirFuelRatio             = A5; 
-const int pinManifoldAbsolutePressure = A6; 
-const int pinExhaustGasTemperature    = A7; 
+// unknowns
+int rawExhaustGasTemperature = 0;
+const int pinExhaustGasTemperature = A7; // small diameter white 
 
 // Serial (UART) commands 
 int incomingByte = 0;
