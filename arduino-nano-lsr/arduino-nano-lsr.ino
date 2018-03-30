@@ -54,7 +54,7 @@ char command = 'z';  // unassigned char
 // Get all the things lined up
 void setup ()
 {
-  Serial.begin(9600);  
+  Serial.begin(38400);  
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
@@ -200,7 +200,7 @@ void loop ()
     
   } // the end of the if; we come here immediately when there's no incoming command 
 
-  delay(100); // tenth of a second
+  delay(100); // pause a tenth of a second; a caller will wait on average 1/2 of that
   digitalWrite(ledPin, LOW); // this may already be off
 
 }  // end of loop()
