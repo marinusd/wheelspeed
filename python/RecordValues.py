@@ -60,8 +60,9 @@ init_gps()
 
 output_file = open(file_path,'w')
 write_header()
+print('Writing log to ' + file_path)
 
-print('Starting data collection loop...')
+print('Starting data collection loop... Ctrl-C to stop loop')
 try:
     i = 0
     while True:
@@ -74,7 +75,7 @@ try:
         time.sleep(0.33) # 3Hz max
         i =+ 1
 except KeyboardInterrupt:
-    print("Shutting down")
+    print("\nShutting down")
 
 output_file.close()
 print('Finished program, log is in ' + file_path)
