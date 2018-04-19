@@ -40,7 +40,7 @@ def get_gps():
     if (packet.mode >= 2):
         lat = str(packet.lat)
         lon = str(packet.lon)
-        mph = str(packet.hspeed * 2.2369363) # speed in m/s, we use mph
+        mph = str(int(packet.hspeed * 2.2369363)) # speed in m/s, we use mph
         utc = str(packet.time)
     if (packet.mode >= 3):
         alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
