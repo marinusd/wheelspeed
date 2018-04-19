@@ -46,6 +46,23 @@ def get_gps():
         alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
     return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
 
+def get_nano():
+    global nano
+    nano.write(str('d').encode())
+    nano_data = nano.readline().decode('ascii').rstrip()
+    (millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature) = nano_data.split(',')
+    if deltaFrontCount == 0:
+        front_rpm = '0'
+    else:
+        front_rpm = str(deltaFrontMicros / deltaFrontCount)
+    if deltaRearCount == 0:
+        rear_rpm = '0'
+    else:
+        rear_rpm = str(deltaRearMicros / deltaRearCount)
+    front_rpm = get_rpm(deltaFrontCount,deltaFrontMicros)
+    # make a get_rpm function, plus one for FT, FP, etc.
+    return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
+
 def write_header():
     global nano
     global output_file
