@@ -6,14 +6,14 @@ import serial
 import gpsd
 
 # this prints a header every 20 lines
-tuning = False
+tuning = True
 
 now = datetime.now()
 file_path = '/home/pi/datalogs/' + now.strftime('%Y-%m-%d.%H:%M') + '.csv'
 nano = 0 # this will be a serial connection
 
 #####FUNCTIONS#############################################
-#initialize serial connection 
+#initialize serial connection
 def init_serial():
     global nano
     # baud must match what's in the Arduino sketch
@@ -40,7 +40,7 @@ def get_gps():
     if (packet.mode >= 2):
         lat = str(packet.lat)
         lon = str(packet.lon)
-        mph = str(packet.speed() * 2.2369363) # speed in m/s, we use mph
+        mph = str(packet.hspeed * 2.2369363) # speed in m/s, we use mph
         utc = str(packet.time)
     if (packet.mode >= 3):
         alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
@@ -49,8 +49,8 @@ def get_gps():
 def write_header():
     global nano
     global output_file
-    nano.write(str('h').encode()) 
-    nano_header = nano.readline().decode('ascii').rstrip() 
+    nano.write(str('h').encode())
+    nano_header = nano.readline().decode('ascii').rstrip()
     gps_header = 'latitude,longitude,altitudeFt,mph,utc'
     output_file.write(nano_header + ',' + gps_header + '\n')
 
@@ -68,8 +68,8 @@ try:
     while True:
         if (i % 20 == 0 and tuning):
             write_header()
-        nano.write(str('d').encode()) 
-        nano_data = nano.readline().decode('ascii').rstrip() 
+        nano.write(str('d').encode())
+        nano_data = nano.readline().decode('ascii').rstrip()
         gps_data = get_gps()
         output_file.write(nano_data + ',' + gps_data + '\n')
         time.sleep(0.33) # 3Hz max
