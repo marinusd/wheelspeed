@@ -11,6 +11,8 @@ tuning = True
 now = datetime.now()
 file_path = '/home/pi/datalogs/' + now.strftime('%Y-%m-%d.%H:%M') + '.csv'
 nano = 0 # this will be a serial connection
+micros_per_minute = 1000000
+analog_factor = 0.0048828125  # 0 = 0V, 512 = 2.5V, 1024 = 5V
 
 #####FUNCTIONS#############################################
 #initialize serial connection
@@ -46,21 +48,36 @@ def get_gps():
         alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
     return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
 
+def get_axle_rpm(micros,count):
+    pulses_per_minute = 0
+    if count > 0:
+        pulse_time_micros = (micros / count)  # each pulse arrived, on average
+        pulses_per_minute = micros_per_minute / pulse_time_micros
+    return str(int(pulses_per_minute))
+
+# the NTK gives a voltage from 0V-5V; the arduino turns that into a int between 0-1024
+def get_afr(pinValue):
+    voltage = pinValue * analog_factor  # convert from 10bits to voltage
+    afr = 9 + (1.4 * voltage)   # according to the NTK doc, 0V = 9.0, 5V = 16.0
+    (whole,fraction) = str(afr).split('.')
+    return whole + '.' + fraction[:1]  # return one fractional digit
+
 def get_nano():
     global nano
     nano.write(str('d').encode())
     nano_data = nano.readline().decode('ascii').rstrip()
-    (millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature) = nano_data.split(',')
-    if deltaFrontCount == 0:
-        front_rpm = '0'
-    else:
-        front_rpm = str(deltaFrontMicros / deltaFrontCount)
-    if deltaRearCount == 0:
-        rear_rpm = '0'
-    else:
-        rear_rpm = str(deltaRearMicros / deltaRearCount)
-    front_rpm = get_rpm(deltaFrontCount,deltaFrontMicros)
-    # make a get_rpm function, plus one for FT, FP, etc.
+    (millis,
+    frontCount,deltaFrontCount,deltaFrontMicros,
+    rearCount,deltaRearCount,deltaRearMicros,
+    rawLeftRideHeight,rawRightRideHeight,
+    rawFuelPressure,rawFuelTemperature,
+    rawGearPosition,rawAirFuelRatio,
+    rawManifoldAbsolutePressure,rawExhaustGasTemperature) = nano_data.split(',')
+
+    front_rpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
+    rear_rpm = get_axle_rpm(deltaRearCount,deltaRearMicros)
+    afr = get_afr(rawAirFuelRatio)
+
     return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
 
 def write_header():
