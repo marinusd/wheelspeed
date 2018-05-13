@@ -4,8 +4,8 @@
 
 from datetime import datetime
 import time
-import serial
-import gpsd
+import serial  #  pip3 install pyserial
+import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 
 # this prints a header every 20 lines
 tuning = True
@@ -16,8 +16,8 @@ nano = 0 # this will be a serial connection
 micros_per_minute = 1000000  # microseconds
 analog_factor = 0.0048828125  # 0 = 0V, 512 = 2.5V, 1024 = 5V
 
-#####FUNCTIONS#############################################
-#initialize serial connection
+##### FUNCTIONS #############################################
+#initialize serial (UART) connection to arduino
 def init_nano():
     global nano
     # baud must match what's in the Arduino sketch
@@ -62,27 +62,37 @@ def get_axle_rpm(micros,count):
 # The ride height sensor readings go DOWN as the accordion units are extended
 #  and the readings go UP as the units are compressed, so we must invert.
 def get_ride_height(pinValue):
-    return 100 - (pinValue * 100 / 1024)
+    return str(int(100 - (pinValue * 100 / 1024)))
 
 # VDO 10-bar pressure sensor has resistance between 8ohms and 180ohms
 #  A voltage divider circuit gives between about 1.6V and 4.8V to the arduino
 #  arduino encodes to an int 0-1024; we will not see the min/max values
 #  when pressure is high, voltage is low; so invert (and normalize to 0-100)
 def get_fuel_pressure(pinValue):
-    return 100 - (pinValue * 100 / 1024)
+    return str(int(100 - (pinValue * 100 / 1024)))
 
-# VDO 10-bar pressure sensor has resistance between 8ohms and 180ohms
-#  A voltage divider circuit gives between about 1.6V and 4.8V to the arduino
-#  arduino encodes to an int 0-1024; we will not see the min/max values
-#  when pressure is high, voltage is low; so invert
+# temp sensor resistance is between 3200 and 12 ohms
+#  Resistance decreases with increasing temperature
+#  The voltage divider circuit converts the resistance to a voltage between about
+#   1.6V (low) and 4.9V (high)
+#  The arduino will report that voltage as an int between 0-1024
 def get_fuel_temperature(pinValue):
-    return 1024 - pinValue
+    return str(int(pinValue * 100 / 1024))
 
 # the NTK gives a voltage from 0V-5V; the arduino turns that into a int between 0-1024
 def get_afr(pinValue):
     voltage = pinValue * analog_factor  # convert from 10bits to voltage
     afr = 9 + (1.4 * voltage)   # according to the NTK doc, 0V = 9.0, 5V = 16.0
     (whole,fraction) = str(afr).split('.')
+    return whole + '.' + fraction[:1]  # return one fractional digit
+
+# the MAP gives a voltage from 0V-5V; the arduino turns that into a int between 0-1024
+def get_map(pinValue):
+    voltage = pinValue * analog_factor  # convert from 10bits to voltage
+    # 11kPa = 0.25V, 307kPa = 4.75V, so
+    kpa = voltage * 64.6315789473
+    psi = kpa * 0.14503774
+    (whole,fraction) = str(psi).split('.')
     return whole + '.' + fraction[:1]  # return one fractional digit
 
 def get_nano_data():
@@ -109,15 +119,15 @@ def get_nano_data():
     man = get_man_abs_pressure(rawManifoldAbsolutePressure)
     egt = get_egt(rawExhaustGasTemperature)
 
-    return (front_rpm + ','
-             rear_rpm + ','
-                  lrh + ','
-                  rrh + ','
-                   ft + ','
-                   fp + ','
-                   gp + ','
-                  afr + ','
-                  map + ','
+    return (front_rpm + ',' +
+             rear_rpm + ',' +
+                  lrh + ',' +
+                  rrh + ',' +
+                   ft + ',' +
+                   fp + ',' +
+                   gp + ',' +
+                  afr + ',' +
+                  man + ',' +
                   egt
             )
 
