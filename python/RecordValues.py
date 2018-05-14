@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 #  version 2018-05-13
-
+# Basic approach for reporting: store all readings as strings in a postgres table
+#  Write a logfile with the raw values (no processing here)
 from datetime import datetime
 import time
 import serial  #  pip3 install pyserial
@@ -15,6 +16,12 @@ file_path = '/home/pi/datalogs/' + now.strftime('%Y-%m-%d.%H:%M') + '.csv'
 nano = 0 # this will be a serial connection
 micros_per_minute = 1000000  # microseconds
 analog_factor = 0.0048828125  # 0 = 0V, 512 = 2.5V, 1024 = 5V
+sql_string = """INSERT INTO run_data (
+    front_rpm,rear_rpm,
+    lrh,rrh,
+    ft,fp,gp,
+    afr,man,egt,
+    lat,lon,alt,mph,utc) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"""
 
 ##### FUNCTIONS #############################################
 #initialize serial (UART) connection to arduino
@@ -37,6 +44,12 @@ def init_gps():
         print('GPS: ' + str(packet.position()))
     else:
         print('GPS: no position fix from device: ' + str(gpsd.device()))
+
+def get_raw_nano_data():
+    global nano
+    nano.write(str('d').encode())
+    raw_nano_data = nano.readline().decode('ascii').rstrip()
+    return raw_nano_data
 
 def get_gps_data():
     lat = lon = alt = mph = utc = '' # make them empty strings
@@ -95,10 +108,18 @@ def get_map(pinValue):
     (whole,fraction) = str(psi).split('.')
     return whole + '.' + fraction[:1]  # return one fractional digit
 
-def get_nano_data():
-    global nano
-    nano.write(str('d').encode())
-    nano_data = nano.readline().decode('ascii').rstrip()
+def write_raw_data_to_log(raw_nano_data,gps_data):
+    global output_file
+    output_file.write(raw_nano_data + ',' + gps_data + '\n')
+
+def store_values_in_db(gps_data,nano_data):
+    sql_string = "INSERT INTO domes_hundred (name,name_slug,status) VALUES (%s,%s,%s) RETURNING id;"
+    cursor.execute(sql_string, (hundred_name, hundred_slug, status))
+    hundred = cursor.fetchone()[0]
+
+def store_values_in_db(gps_data,raw_nano_data):
+    (lat,lon,alt,mph,utc) = gps_data.split(',')
+    # cook the nano data
     (millis,
     frontCount,deltaFrontCount,deltaFrontMicros,
     rearCount,deltaRearCount,deltaRearMicros,
@@ -106,8 +127,8 @@ def get_nano_data():
     rawFuelPressure,rawFuelTemperature,
     rawGearPosition,rawAirFuelRatio,
     rawManifoldAbsolutePressure,rawExhaustGasTemperature
-    ) = nano_data.split(',')
-
+    ) = raw_nano_data.split(',')
+    # calcs and transforms
     front_rpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
     rear_rpm  = get_axle_rpm(deltaRearCount,deltaRearMicros)
     lrh = get_ride_height(rawLeftRideHeight)
@@ -118,6 +139,10 @@ def get_nano_data():
     afr = get_afr(rawAirFuelRatio)
     man = get_man_abs_pressure(rawManifoldAbsolutePressure)
     egt = get_egt(rawExhaustGasTemperature)
+
+    # we have all the values
+    sql_string = "INSERT INTO run_data (name,name_slug,status) VALUES (%s,%s,%s);"
+    cursor.execute(sql_string, (hundred_name, hundred_slug, status))
 
     return (front_rpm + ',' +
              rear_rpm + ',' +
@@ -131,7 +156,7 @@ def get_nano_data():
                   egt
             )
 
-def write_header():
+def write_header_to_file():
     global nano
     global output_file
     nano.write(str('h').encode())
@@ -144,19 +169,21 @@ init_nano()
 init_gps()
 
 output_file = open(file_path,'w')
-write_header()
+write_header_to_file()
 print('Writing log to ' + file_path)
 
 print('Starting data collection loop... Ctrl-C to stop loop')
 try:
     i = 0
     while True:
-        if (i % 20 == 0 and tuning):
-            write_header()
-        nano.write(str('d').encode())  # command nano to send data
-        nano_data = nano.readline().decode('ascii').rstrip()
+        #if (i % 20 == 0 and tuning):
+        #    write_header_to_file()
+        raw_nano_data = get_nano_data()
         gps_data = get_gps_data()
-        output_file.write(nano_data + ',' + gps_data + '\n')
+        write_raw_data_to_log(raw_nano_data,gps_data)
+
+
+
         time.sleep(0.33) # 3Hz max
         i =+ 1
 except KeyboardInterrupt:
