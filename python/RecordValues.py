@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 #  version 2018-05-13
-# Basic approach for reporting: store all readings as strings in a postgres table
-#  Write a logfile with the raw values (no processing here)
+# Basic approach for reporting:
+#  1. Write a logfile with the raw values
+#  2. Write a datafile with calculated info
 from datetime import datetime
 import time
 import serial  #  pip3 install pyserial
@@ -11,17 +12,14 @@ import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 # this prints a header every 20 lines
 tuning = True
 
-now = datetime.now()
-file_path = '/home/pi/datalogs/' + now.strftime('%Y-%m-%d.%H:%M') + '.csv'
+file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
+raw_log_file_path = '/home/pi/datalogs/raw-' + file_timestamp + '.csv'
+data_file_path = '/home/pi/datalogs/data-' + file_timestamp + '.csv'
 nano = 0 # this will be a serial connection
 micros_per_minute = 1000000  # microseconds
 analog_factor = 0.0048828125  # 0 = 0V, 512 = 2.5V, 1024 = 5V
-sql_string = """INSERT INTO run_data (
-    front_rpm,rear_rpm,
-    lrh,rrh,
-    ft,fp,gp,
-    afr,man,egt,
-    lat,lon,alt,mph,utc) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"""
+gps_header = 'latitude,longitude,altitudeFt,mph,utc'
+readings_header = 'time,mph,fRpm,rRpm,afr,map,fTemp,fPress,lrh,rrh,utc'
 
 ##### FUNCTIONS #############################################
 #initialize serial (UART) connection to arduino
@@ -108,17 +106,7 @@ def get_map(pinValue):
     (whole,fraction) = str(psi).split('.')
     return whole + '.' + fraction[:1]  # return one fractional digit
 
-def write_raw_data_to_log(raw_nano_data,gps_data):
-    global output_file
-    output_file.write(raw_nano_data + ',' + gps_data + '\n')
-
-def store_values_in_db(gps_data,nano_data):
-    sql_string = "INSERT INTO domes_hundred (name,name_slug,status) VALUES (%s,%s,%s) RETURNING id;"
-    cursor.execute(sql_string, (hundred_name, hundred_slug, status))
-    hundred = cursor.fetchone()[0]
-
-def store_values_in_db(gps_data,raw_nano_data):
-    (lat,lon,alt,mph,utc) = gps_data.split(',')
+def get_readings(raw_nano_data,gps_data):
     # cook the nano data
     (millis,
     frontCount,deltaFrontCount,deltaFrontMicros,
@@ -128,9 +116,10 @@ def store_values_in_db(gps_data,raw_nano_data):
     rawGearPosition,rawAirFuelRatio,
     rawManifoldAbsolutePressure,rawExhaustGasTemperature
     ) = raw_nano_data.split(',')
+    (lat,lon,alt,mph,utc) = gps_data.split(',')
     # calcs and transforms
-    front_rpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
-    rear_rpm  = get_axle_rpm(deltaRearCount,deltaRearMicros)
+    fRpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
+    rRpm = get_axle_rpm(deltaRearCount,deltaRearMicros)
     lrh = get_ride_height(rawLeftRideHeight)
     rrh = get_ride_height(rawRightRideHeight)
     fp  = get_fuel_pressure(rawFuelPressure)
@@ -139,55 +128,68 @@ def store_values_in_db(gps_data,raw_nano_data):
     afr = get_afr(rawAirFuelRatio)
     man = get_man_abs_pressure(rawManifoldAbsolutePressure)
     egt = get_egt(rawExhaustGasTemperature)
-
-    # we have all the values
-    sql_string = "INSERT INTO run_data (name,name_slug,status) VALUES (%s,%s,%s);"
-    cursor.execute(sql_string, (hundred_name, hundred_slug, status))
-
-    return (front_rpm + ',' +
-             rear_rpm + ',' +
-                  lrh + ',' +
-                  rrh + ',' +
-                   ft + ',' +
-                   fp + ',' +
-                   gp + ',' +
-                  afr + ',' +
-                  man + ',' +
-                  egt
+    # returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
+    return ( mph + ',' +
+            fRpm + ',' +
+            rRpm + ',' +
+             afr + ',' +
+             man + ',' +
+              ft + ',' +
+              fp + ',' +
+             lrh + ',' +
+             rrh + ',' +
+             utc
             )
 
-def write_header_to_file():
+def write_raw_log_header():
     global nano
-    global output_file
+    global raw_log_file
     nano.write(str('h').encode())
     nano_header = nano.readline().decode('ascii').rstrip()
-    gps_header = 'latitude,longitude,altitudeFt,mph,utc'
-    output_file.write(nano_header + ',' + gps_header + '\n')
+    raw_log_file.write('timestamp,' + nano_header + ',' + gps_header + '\n')
+
+def write_raw_log(timestamp,raw_nano_data,gps_data):
+    global raw_log_file
+    raw_log_file.write(timestamp + ',' +raw_nano_data + ',' + gps_data + '\n')
+
+def write_data_header():
+    global data_file
+    data_file.write(readings_header + '\n')
+
+def write_data_file(timestamp,readings):
+    global data_file
+    data_file.write(timestamp + ',' + readings + '\n')
 
 ##### MAIN MAIN MAIN ###################################
 init_nano()
 init_gps()
 
-output_file = open(file_path,'w')
-write_header_to_file()
-print('Writing log to ' + file_path)
+raw_log_file = open(raw_log_file_path,'w')
+write_raw_log_header()
+print('Writing raw log to ' + raw_log_file_path)
 
-print('Starting data collection loop... Ctrl-C to stop loop')
+data_file = open(data_file_path,'w')
+write_data_header()
+print('Writing data to ' + data_file_path)
+
+print('Starting sensor collection loop... Ctrl-C to stop loop')
 try:
     i = 0
     while True:
+        timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
         #if (i % 20 == 0 and tuning):
-        #    write_header_to_file()
-        raw_nano_data = get_nano_data()
+        #    write_header_to_raw_file()
         gps_data = get_gps_data()
-        write_raw_data_to_log(raw_nano_data,gps_data)
-
-
-
+        raw_nano_data = get_nano_data()
+        write_raw_log(timestamp, raw_nano_data,gps_data)
+        # now the processed numbers
+        readings = get_readings(raw_nano_data,gps_data)
+        write_data_file(timestamp, readings)
         time.sleep(0.33) # 3Hz max
         i =+ 1
 except KeyboardInterrupt:
     print("\nShutting down")
 
-output_file.close()
-print('Finished program, log is in ' + file_path)
+raw_log_file.close()
+data_file.close()
+print('Finished program, data is in ' + data_file_path)
