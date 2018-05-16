@@ -9,56 +9,81 @@ import time
 import serial  #  pip3 install pyserial
 import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 
-# this prints a header every 20 lines
-tuning = True
-
+# constants
+data_dir = '/home/pi/datalogs'
 file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
-raw_log_file_path = '/home/pi/datalogs/raw-' + file_timestamp + '.csv'
-data_file_path = '/home/pi/datalogs/data-' + file_timestamp + '.csv'
-nano = 0 # this will be a serial connection
+raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
+data_file_path = data_dir + '/data-' + file_timestamp + '.csv'
 micros_per_minute = 1000000  # microseconds
 analog_factor = 0.0048828125  # 0 = 0V, 512 = 2.5V, 1024 = 5V
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
 readings_header = 'time,mph,fRpm,rRpm,afr,map,fTemp,fPress,lrh,rrh,utc'
 
+# globals
+NANO = 0
+DATA_FILE = 0
+RAW_LOG_FILE = 0
+
 ##### FUNCTIONS #############################################
 #initialize serial (UART) connection to arduino
 def init_nano():
-    global nano
-    # baud must match what's in the Arduino sketch
-    nano = serial.Serial('/dev/serial0', 38400, timeout = 1)
-    nano.close()
-    nano.open()
-    if nano.isOpen():
-        print('Nano open: ' + nano.portstr)
+    global NANO
+    isOpen = False
+    while not isOpen:
+        try:
+            # baud must match what's in the Arduino sketch
+            NANO = serial.Serial('/dev/serial0', 38400, timeout = 1)
+            NANO.close()
+            NANO.open()
+            isOpen = NANO.isOpen()
+        except:
+            print("exception in init_nano")
+            time.sleep(0.33)
+    if isOpen:
+        print('Nano open: ' + NANO.portstr)
     else:
-        print('Nano not open?')
+        print('Nano not open? How can be?')
 
 def init_gps():
-    gpsd.connect()
-    packet = gpsd.get_current()
+    i = 0
+    while i < 3:
+        try:
+            gpsd.connect()   # gpsd daemon should be running in O.S.
+        except:
+            print("exception in init_gps")
+            time.sleep(1.5)
+            i = i + 1
+        else:
+            break
+    packet = gpsd.get_current()  # this will blow up if we are not connected
     if (packet.mode > 1):   # then we have either a 2D or 3D fix
-    # See the inline docs for GpsResponse for the available data
-        print('GPS: ' + str(packet.position()))
+        print('GPS position: ' + str(packet.position()))
     else:
         print('GPS: no position fix from device: ' + str(gpsd.device()))
 
 def get_raw_nano_data():
-    global nano
-    nano.write(str('d').encode())
-    raw_nano_data = nano.readline().decode('ascii').rstrip()
+    global NANO
+    raw_nano_data = ''
+    try:
+        NANO.write(str('d').encode())
+        raw_nano_data = NANO.readline().decode('ascii').rstrip()
+    except:
+        print("exception in get_raw_nano_data")
     return raw_nano_data
 
 def get_gps_data():
     lat = lon = alt = mph = utc = '' # make them empty strings
-    packet = gpsd.get_current()
-    if (packet.mode >= 2):
-        lat = str(packet.lat)
-        lon = str(packet.lon)
-        mph = str(int(packet.hspeed * 2.2369363)) # speed in m/s, we use mph
-        utc = str(packet.time)
-    if (packet.mode >= 3):
-        alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
+    try:
+        packet = gpsd.get_current()
+        if (packet.mode >= 2):
+            lat = str(packet.lat)
+            lon = str(packet.lon)
+            mph = str(int(packet.hspeed * 2.2369363)) # speed in m/s, we use mph
+            utc = str(packet.time)
+        if (packet.mode >= 3):
+            alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
+    except:
+        print("Exception in get_gps_data")
     return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
 
 def get_axle_rpm(micros,count):
@@ -107,27 +132,31 @@ def get_map(pinValue):
     return whole + '.' + fraction[:1]  # return one fractional digit
 
 def get_readings(raw_nano_data,gps_data):
+    mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = ''
     # cook the nano data
-    (millis,
-    frontCount,deltaFrontCount,deltaFrontMicros,
-    rearCount,deltaRearCount,deltaRearMicros,
-    rawLeftRideHeight,rawRightRideHeight,
-    rawFuelPressure,rawFuelTemperature,
-    rawGearPosition,rawAirFuelRatio,
-    rawManifoldAbsolutePressure,rawExhaustGasTemperature
-    ) = raw_nano_data.split(',')
-    (lat,lon,alt,mph,utc) = gps_data.split(',')
-    # calcs and transforms
-    fRpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
-    rRpm = get_axle_rpm(deltaRearCount,deltaRearMicros)
-    lrh = get_ride_height(rawLeftRideHeight)
-    rrh = get_ride_height(rawRightRideHeight)
-    fp  = get_fuel_pressure(rawFuelPressure)
-    ft  = get_fuel_temperature(rawFuelTemperature)
-    gp  = get_gear_position(rawGearPosition)
-    afr = get_afr(rawAirFuelRatio)
-    man = get_man_abs_pressure(rawManifoldAbsolutePressure)
-    egt = get_egt(rawExhaustGasTemperature)
+    try:
+        (millis,
+        frontCount,deltaFrontCount,deltaFrontMicros,
+        rearCount,deltaRearCount,deltaRearMicros,
+        rawLeftRideHeight,rawRightRideHeight,
+        rawFuelPressure,rawFuelTemperature,
+        rawGearPosition,rawAirFuelRatio,
+        rawManifoldAbsolutePressure,rawExhaustGasTemperature
+        ) = raw_nano_data.split(',')
+        (lat,lon,alt,mph,utc) = gps_data.split(',')
+        # calcs and transforms
+        fRpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
+        rRpm = get_axle_rpm(deltaRearCount,deltaRearMicros)
+        afr = get_afr(rawAirFuelRatio)
+        man = get_man_abs_pressure(rawManifoldAbsolutePressure)
+        ft  = get_fuel_temperature(rawFuelTemperature)
+        fp  = get_fuel_pressure(rawFuelPressure)
+        lrh = get_ride_height(rawLeftRideHeight)
+        rrh = get_ride_height(rawRightRideHeight)
+        #gp  = get_gear_position(rawGearPosition)
+        #egt = get_egt(rawExhaustGasTemperature)
+    except:
+        print("exception in get_readings")
     # returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
     return ( mph + ',' +
             fRpm + ',' +
@@ -142,54 +171,54 @@ def get_readings(raw_nano_data,gps_data):
             )
 
 def write_raw_log_header():
-    global nano
-    global raw_log_file
-    nano.write(str('h').encode())
-    nano_header = nano.readline().decode('ascii').rstrip()
-    raw_log_file.write('timestamp,' + nano_header + ',' + gps_header + '\n')
+    global NANO
+    global RAW_LOG_FILE
+    NANO.write(str('h').encode())
+    NANO_header = NANO.readline().decode('ascii').rstrip()
+    RAW_LOG_FILE.write('timestamp,' + nano_header + ',' + gps_header + '\n')
 
 def write_raw_log(timestamp,raw_nano_data,gps_data):
-    global raw_log_file
-    raw_log_file.write(timestamp + ',' +raw_nano_data + ',' + gps_data + '\n')
+    global RAW_LOG_FILE
+    RAW_LOG_FILE.write(timestamp + ',' +raw_nano_data + ',' + gps_data + '\n')
 
 def write_data_header():
-    global data_file
-    data_file.write(readings_header + '\n')
+    global DATA_FILE
+    DATA_FILE.write(readings_header + '\n')
 
 def write_data_file(timestamp,readings):
-    global data_file
-    data_file.write(timestamp + ',' + readings + '\n')
+    global DATA_FILE
+    DATA_FILE.write(timestamp + ',' + readings + '\n')
 
 ##### MAIN MAIN MAIN ###################################
-init_nano()
 init_gps()
+init_nano()
 
-raw_log_file = open(raw_log_file_path,'w')
-write_raw_log_header()
+RAW_LOG_FILE = open(raw_log_file_path,'w')
 print('Writing raw log to ' + raw_log_file_path)
+write_raw_log_header()
 
-data_file = open(data_file_path,'w')
-write_data_header()
+DATA_FILE = open(data_file_path,'w')
 print('Writing data to ' + data_file_path)
+write_data_header()
 
 print('Starting sensor collection loop... Ctrl-C to stop loop')
-try:
-    i = 0
-    while True:
-        timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-        #if (i % 20 == 0 and tuning):
-        #    write_header_to_raw_file()
-        gps_data = get_gps_data()
-        raw_nano_data = get_nano_data()
-        write_raw_log(timestamp, raw_nano_data,gps_data)
-        # now the processed numbers
-        readings = get_readings(raw_nano_data,gps_data)
-        write_data_file(timestamp, readings)
+while True:
+    try:
         time.sleep(0.33) # 3Hz max
-        i =+ 1
-except KeyboardInterrupt:
-    print("\nShutting down")
+        # example timestamp: 1526430861.829
+        timestamp = datetime.now().strftime('%s.%f')[:-3]
+        gps_data = get_gps_data()
+        raw_nano_data = get_raw_nano_data()
+        write_raw_log(timestamp, raw_nano_data, gps_data)
+        # now the processed numbers
+        readings = get_readings(raw_nano_data, gps_data)
+        write_data_file(timestamp, readings)
+    except KeyboardInterrupt:
+        print("\nShutting down")
+        break
+    except:
+        print("exception in main loop")
 
-raw_log_file.close()
-data_file.close()
+RAW_LOG_FILE.close()
+DATA_FILE.close()
 print('Finished program, data is in ' + data_file_path)
