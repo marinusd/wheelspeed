@@ -11,7 +11,7 @@ import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 import Decode
 
 # constants
-data_dir = '/tmp/pi/datalogs'
+data_dir = '/home/pi/datalogs'
 file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
 data_file_path = data_dir + '/data-' + file_timestamp + '.csv'
@@ -92,12 +92,12 @@ def write_data_file(timestamp,readings):
     DATA_FILE.write(timestamp + ',' + readings + '\n')
 
 ##### MAIN MAIN MAIN ###################################
-#init_gps()
-#init_nano()
+init_gps()
+init_nano()
 
 RAW_LOG_FILE = open(raw_log_file_path,'w')
 print('Writing raw log to ' + raw_log_file_path)
-#write_raw_log_header()
+write_raw_log_header()
 
 DATA_FILE = open(data_file_path,'w')
 print('Writing data to ' + data_file_path)

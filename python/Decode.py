@@ -8,7 +8,6 @@ import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 micros_per_minute = 1000000  # microseconds
 analog_factor = 0.0048828125  # 0 = 0V, 512 = 2.5V, 1024 = 5V
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
-readings_header = 'time,mph,fRpm,rRpm,afr,map,fTemp,fPress,lrh,rrh,utc'
 
 def get_gps_data():
     lat = lon = alt = mph = utc = '' # make them empty strings
@@ -73,29 +72,26 @@ def get_map(pinValue):
 def get_readings(raw_nano_data,gps_data):
     mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = ''
     # cook the nano data
-    try:
-        (millis,
-        frontCount,deltaFrontCount,deltaFrontMicros,
-        rearCount,deltaRearCount,deltaRearMicros,
-        rawLeftRideHeight,rawRightRideHeight,
-        rawFuelPressure,rawFuelTemperature,
-        rawGearPosition,rawAirFuelRatio,
-        rawManifoldAbsolutePressure,rawExhaustGasTemperature
-        ) = raw_nano_data.split(',')
-        (lat,lon,alt,mph,utc) = gps_data.split(',')
-        # calcs and transforms
-        fRpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
-        rRpm = get_axle_rpm(deltaRearCount,deltaRearMicros)
-        afr = get_afr(rawAirFuelRatio)
-        man = get_man_abs_pressure(rawManifoldAbsolutePressure)
-        ft  = get_fuel_temperature(rawFuelTemperature)
-        fp  = get_fuel_pressure(rawFuelPressure)
-        lrh = get_ride_height(rawLeftRideHeight)
-        rrh = get_ride_height(rawRightRideHeight)
-        #gp  = get_gear_position(rawGearPosition)
-        #egt = get_egt(rawExhaustGasTemperature)
-    except:
-        print("exception in get_readings")
+    (millis,
+    frontCount,deltaFrontCount,deltaFrontMicros,
+    rearCount,deltaRearCount,deltaRearMicros,
+    rawLeftRideHeight,rawRightRideHeight,
+    rawFuelPressure,rawFuelTemperature,
+    rawGearPosition,rawAirFuelRatio,
+    rawManifoldAbsolutePressure,rawExhaustGasTemperature
+    ) = raw_nano_data.split(',')
+    (lat,lon,alt,mph,utc) = gps_data.split(',')
+    # calcs and transforms
+    fRpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
+    rRpm = get_axle_rpm(deltaRearCount,deltaRearMicros)
+    afr = get_afr(rawAirFuelRatio)
+    man = get_man_abs_pressure(rawManifoldAbsolutePressure)
+    ft  = get_fuel_temperature(rawFuelTemperature)
+    fp  = get_fuel_pressure(rawFuelPressure)
+    lrh = get_ride_height(rawLeftRideHeight)
+    rrh = get_ride_height(rawRightRideHeight)
+    #gp  = get_gear_position(rawGearPosition)
+    #egt = get_egt(rawExhaustGasTemperature)
     # returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
     return ( mph + ',' +
             fRpm + ',' +
