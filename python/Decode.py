@@ -63,9 +63,10 @@ def get_afr(pinValue):
 # the MAP gives a voltage from 0V-5V; the arduino turns that into a int between 0-1024
 def get_map(pinValue):
     voltage = pinValue * analog_factor  # convert from 10bits to voltage
-    # 11kPa = 0.25V, 307kPa = 4.75V, so
-    kpa = voltage * 64.6315789473
-    psi = kpa * 0.14503774
+    # calibration... userReport:      11kPa = 0.25V, 307kPa = 4.75V
+    # calibration... Motec Datasheet: 20kPa = 0.4V,  300kPa = 4.65V
+    kpa = (voltage * 65.882 - 6.352)  # line equation from datasheet points
+    psi = kpa * 0.145038 # google says so
     (whole,fraction) = str(psi).split('.')
     return whole + '.' + fraction[:1]  # return one fractional digit
 
