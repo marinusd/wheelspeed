@@ -51,7 +51,7 @@ def init_gps():
         try:
             gpsd.connect()   # gpsd daemon should be running in O.S.
         except:
-            print("exception in init_gps")
+            print("cannot connect to gpsd daemon")
             time.sleep(1.5)
             i = i + 1
         else:
