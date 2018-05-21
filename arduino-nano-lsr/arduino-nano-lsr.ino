@@ -1,5 +1,6 @@
 // Gen IV module sketch
-// 2018-03-14
+const long Version = 20180521;  // 2018-05-21
+const char subVersion = 'a';
 
 // Digital Pins
 // Pins 0 & 1 are for the UART to communicate with the rPi.
@@ -136,6 +137,9 @@ void collectReadings() {
 }
 
 // one of these functions will be asked for by the Linux box
+void printVersion() {
+  Serial.print("Version: "); Serial.print(Version); Serial.println(subVersion); 
+}
 void printHeader() {
   Serial.print("millis");                       Serial.print(',');
   Serial.print("frontCount");                   Serial.print(',');
@@ -194,8 +198,11 @@ void loop ()
     } else if (command == 'h') {
       printHeader();
 
+    } else if (command == 'v') {
+      printVersion();
+
     } else {
-      Serial.print(" ? Send h for header or d for data. Received: "); Serial.println(command);
+      Serial.print(" ? Send h for header, d for data, v for version. Received: "); Serial.println(command);
     }
     
   } // the end of the if; we come here immediately when there's no incoming command 
