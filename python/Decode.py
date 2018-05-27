@@ -83,16 +83,16 @@ def get_readings(raw_nano_data,gps_data):
     ) = raw_nano_data.split(',')
     (lat,lon,alt,mph,utc) = gps_data.split(',')
     # calcs and transforms
-    fRpm = get_axle_rpm(deltaFrontCount,deltaFrontMicros)
-    rRpm = get_axle_rpm(deltaRearCount,deltaRearMicros)
-    afr = get_afr(rawAirFuelRatio)
-    man = get_man_abs_pressure(rawManifoldAbsolutePressure)
-    ft  = get_fuel_temperature(rawFuelTemperature)
-    fp  = get_fuel_pressure(rawFuelPressure)
-    lrh = get_ride_height(rawLeftRideHeight)
-    rrh = get_ride_height(rawRightRideHeight)
-    #gp  = get_gear_position(rawGearPosition)
-    #egt = get_egt(rawExhaustGasTemperature)
+    fRpm = get_axle_rpm(int(deltaFrontCount),int(deltaFrontMicros))
+    rRpm = get_axle_rpm(int(deltaRearCount),int(deltaRearMicros))
+    afr = get_afr(int(rawAirFuelRatio))
+    man = get_map(int(rawManifoldAbsolutePressure))
+    ft  = get_fuel_temperature(int(rawFuelTemperature))
+    fp  = get_fuel_pressure(int(rawFuelPressure))
+    lrh = get_ride_height(int(rawLeftRideHeight))
+    rrh = get_ride_height(int(rawRightRideHeight))
+    #gp  = get_gear_position(int(rawGearPosition))
+    #egt = get_egt(int(rawExhaustGasTemperature))
     # returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
     return ( mph + ',' +
             fRpm + ',' +
