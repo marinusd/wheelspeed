@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#  version 2018-05-13
+#  version 2018-05-27
 # Basic approach for reporting:
 #  1. Write a logfile with the raw values
 #  2. Write a datafile with calculated info
@@ -16,8 +16,6 @@ data_dir = '/home/pi/datalogs'
 file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
 data_file_path = data_dir + '/data-' + file_timestamp + '.csv'
-micros_per_minute = 1000000  # microseconds
-analog_factor = 0.0048828125  # 0 = 0V, 512 = 2.5V, 1024 = 5V
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
 readings_header = 'time,mph,fRpm,rRpm,afr,map,fTemp,fPress,lrh,rrh,utc'
 

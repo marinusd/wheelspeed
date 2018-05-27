@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+#  version 2018-05-27
 from datetime import datetime
 import time
 import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
@@ -7,7 +8,6 @@ import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 # constants
 micros_per_minute = 1000000  # microseconds
 analog_factor = 0.004887585  # 0 = 0V, 512 = ~2.5V, 1023 = 5V
-gps_header = 'latitude,longitude,altitudeFt,mph,utc'
 
 def get_gps_data():
     lat = lon = alt = mph = utc = '' # make them empty strings
@@ -25,11 +25,12 @@ def get_gps_data():
     return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
 
 def get_axle_rpm(micros,count):
+    # one magnet per wheel means one pulse per revolution
     pulses_per_minute = 0
     if count > 0:
         pulse_time_micros = (micros / count)  # each pulse arrived, on average
         pulses_per_minute = micros_per_minute / pulse_time_micros
-    return str(int(pulses_per_minute))
+    return str(int(pulses_per_minute)) # int throws away the fraction
 
 # linear potentiometers give a voltage between 0V-3.3V;
 #   arduino encodes to an int 0-1024; and we want a range 0..100
