@@ -11,6 +11,7 @@ import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 import Decode
 
 # constants
+serial_dev = '/dev/ttyO1' # beaglebone;   /dev/serial0 for RaspberryPi
 data_dir = '/home/pi/datalogs'
 file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
@@ -33,7 +34,7 @@ def init_nano():
     while not isOpen:
         try:
             # baud must match what's in the Arduino sketch
-            NANO = serial.Serial('/dev/serial0', 38400, timeout = 1)
+            NANO = serial.Serial(serial_dev, 38400, timeout = 1)
             NANO.close()
             NANO.open()
             isOpen = NANO.isOpen()
@@ -76,7 +77,7 @@ def write_raw_log_header():
     global NANO
     global RAW_LOG_FILE
     NANO.write(str('h').encode())
-    NANO_header = NANO.readline().decode('ascii').rstrip()
+    nano_header = NANO.readline().decode('ascii').rstrip()
     RAW_LOG_FILE.write('timestamp,' + nano_header + ',' + gps_header + '\n')
 
 def write_raw_log(timestamp,raw_nano_data,gps_data):
