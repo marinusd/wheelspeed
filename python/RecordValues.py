@@ -6,12 +6,12 @@
 #  2. Write a datafile with calculated info
 from datetime import datetime
 import time
-import serial  #  pip3 install pyserial
-import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
+import serial  # pip3 install pyserial
+import gpsd    # pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 import Decode
 
 # constants
-serial_dev = '/dev/ttyO1' # beaglebone;   /dev/serial0 for RaspberryPi
+serial_dev = '/dev/serial0' # RaspberryPi; '/dev/ttyO1' # beaglebone;
 data_dir = '/home/pi/datalogs'
 file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
