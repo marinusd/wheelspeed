@@ -6,7 +6,7 @@ import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 
 # constants
 micros_per_minute = 1000000  # microseconds
-analog_factor = 0.0048828125  # 0 = 0V, 512 = 2.5V, 1024 = 5V
+analog_factor = 0.004887585  # 0 = 0V, 512 = ~2.5V, 1023 = 5V
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
 
 def get_gps_data():
@@ -56,7 +56,7 @@ def get_fuel_temperature(pinValue):
 # the NTK gives a voltage from 0V-5V; the arduino turns that into a int between 0-1024
 def get_afr(pinValue):
     voltage = pinValue * analog_factor  # convert from 10bits to voltage
-    afr = 9 + (1.4 * voltage)   # according to the NTK doc, 0V = 9.0, 5V = 16.0
+    afr = (1.4 * voltage) + 9   # according to the NTK doc, 0V = 9.0, 5V = 16.0
     (whole,fraction) = str(afr).split('.')
     return whole + '.' + fraction[:1]  # return one fractional digit
 
@@ -64,11 +64,15 @@ def get_afr(pinValue):
 def get_map(pinValue):
     voltage = pinValue * analog_factor  # convert from 10bits to voltage
     # calibration... userReport:      11kPa = 0.25V, 307kPa = 4.75V
+      # y = 65.7778 x - 5.44444  ## reads low?
     # calibration... Motec Datasheet: 20kPa = 0.4V,  300kPa = 4.65V
-    kpa = (voltage * 65.882 - 6.352)  # line equation from datasheet points
+      # y = 65.8824 x - 6.35294  ## reads low?
+    kpa = (76 * voltage) - .352  # 76 gave good number at Broomfield
     psi = kpa * 0.145038 # google says so
+    #print("MAP pin: " + str(pinValue) + " V: " + str(voltage) + " kpa: " + str(kpa) + " psi: " + str(psi))
     (whole,fraction) = str(psi).split('.')
-    return whole + '.' + fraction[:1]  # return one fractional digit
+    map_val = whole + '.' + fraction[:1]  # return one fractional digit
+    return map_val
 
 def get_readings(raw_nano_data,gps_data):
     mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = ''
