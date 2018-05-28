@@ -1,3 +1,5 @@
 Contents
 =====
-This has code for Arduino, java for IOIO, and python for command-line foolery.
+Most sensors connect to the Arduino nano (except for the GPS). The Arduino
+connects to the RaspberryPi/Beaglebone via a UART on the computer. Baud setting
+must match between the units.
