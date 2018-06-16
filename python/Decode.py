@@ -24,12 +24,12 @@ def get_gps_data():
         print("Exception in get_gps_data")
     return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
 
-def get_axle_rpm(micros,count):
+def get_axle_rpm(pulseCount,elapsedMicros):
     # one magnet per wheel means one pulse per revolution
     pulses_per_minute = 0
-    if count > 0:
-        pulse_time_micros = (micros / count)  # each pulse arrived, on average
-        pulses_per_minute = micros_per_minute / pulse_time_micros
+    if pulseCount > 0:
+        average_pulse_micros = (elapsedMicros / pulseCount)  # each pulse took, on average
+        pulses_per_minute = micros_per_minute / average_pulse_micros
     return str(int(pulses_per_minute)) # int throws away the fraction
 
 # linear potentiometers give a voltage between 0V-3.3V;
@@ -89,8 +89,11 @@ def get_readings(raw_nano_data,gps_data):
     (lat,lon,alt,mph,utc) = gps_data.split(',')
     # calcs and transforms
     fRpm = get_axle_rpm(int(deltaFrontCount),int(deltaFrontMicros))
+    # println(utc + ' FrontRPM' + fRpm)
     rRpm = get_axle_rpm(int(deltaRearCount),int(deltaRearMicros))
+    # println(utc + ' RearRPM' + rRpm)
     afr = get_afr(int(rawAirFuelRatio))
+    #### println(utc + ' RearRPM' + rRpm)
     man = get_map(int(rawManifoldAbsolutePressure))
     ft  = get_fuel_temperature(int(rawFuelTemperature))
     fp  = get_fuel_pressure(int(rawFuelPressure))
