@@ -6,7 +6,7 @@ import time
 import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 
 # constants
-micros_per_minute = 1000000  # microseconds
+micros_per_minute = 1000000 * 60 # microseconds
 analog_factor = 0.004887585  # 0 = 0V, 512 = ~2.5V, 1023 = 5V
 
 def get_gps_data():
@@ -65,10 +65,10 @@ def get_afr(pinValue):
 def get_map(pinValue):
     voltage = pinValue * analog_factor  # convert from 10bits to voltage
     # calibration... userReport:      11kPa = 0.25V, 307kPa = 4.75V
-      # y = 65.7778 x - 5.44444 
+      # y = 65.7778 x - 5.44444
     # calibration... Motec Datasheet: 20kPa = 0.4V,  300kPa = 4.65V
       # y = 65.8824 x - 6.35294
-    kpa = (65.88 * voltage) - 6.352
+    kpa = (65.83 * voltage) - 5.8986   # (averaged)
     psi = kpa * 0.145038 # google says so
     #print("MAP pin: " + str(pinValue) + " V: " + str(voltage) + " kpa: " + str(kpa) + " psi: " + str(psi))
     (whole,fraction) = str(psi).split('.')
