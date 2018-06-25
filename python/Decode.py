@@ -9,20 +9,26 @@ import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 micros_per_minute = 1000000 * 60 # microseconds
 analog_factor = 0.004887585  # 0 = 0V, 512 = ~2.5V, 1023 = 5V
 
+# globals
+MPH = ''
+UTC = ''
+
 def get_gps_data():
-    lat = lon = alt = mph = utc = '' # make them empty strings
+    global MPH
+    global UTC
+    lat = lon = alt = MPH = UTC = '' # make them empty strings
     try:
         packet = gpsd.get_current()
         if (packet.mode >= 2):
             lat = str(packet.lat)
             lon = str(packet.lon)
-            mph = str(int(packet.hspeed * 2.2369363)) # speed in m/s, we use mph
-            utc = str(packet.time)
+            MPH = str(int(packet.hspeed * 2.2369363)) # speed in m/s, we use mph
+            UTC = str(packet.time)
         if (packet.mode >= 3):
             alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
     except:
         print("Exception in get_gps_data")
-    return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
+    return lat + ',' + lon + ',' + alt + ',' + MPH + ',' + UTC
 
 def get_axle_rpm(pulseCount,elapsedMicros):
     # one magnet per wheel means one pulse per revolution
@@ -102,6 +108,7 @@ def get_readings(raw_nano_data,gps_data):
     #gp  = get_gear_position(int(rawGearPosition))
     #egt = get_egt(int(rawExhaustGasTemperature))
     # returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
+    #print('MPH ' + MPH + ' fRPM ' + fRpm + ' rRPM ' + rRpm + ' ' + UTC)
     return ( mph + ',' +
             fRpm + ',' +
             rRpm + ',' +

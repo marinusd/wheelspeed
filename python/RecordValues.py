@@ -11,7 +11,9 @@ import gpsd    # pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 import Decode
 
 # constants
-serial_dev = '/dev/serial0' # RaspberryPi; '/dev/ttyO1' # beaglebone;
+sleep_time = 0.5 # seconds
+serial_dev = '/dev/serial0' # RaspberryPi;
+#serial_dev = '/dev/ttyO1' # beaglebone;
 data_dir = '/home/pi/datalogs'
 file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
@@ -105,7 +107,7 @@ write_data_header()
 print('Starting sensor collection loop... Ctrl-C to stop loop')
 while True:
     try:
-        time.sleep(0.33) # 3Hz max
+        time.sleep(sleep_time) 
         # example timestamp: 1526430861.829
         timestamp = datetime.now().strftime('%s.%f')[:-3]
         gps_data = Decode.get_gps_data()
