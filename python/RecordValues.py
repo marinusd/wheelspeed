@@ -6,6 +6,8 @@
 #  2. Write a datafile with calculated info
 from datetime import datetime
 import time
+import daemon
+import daemon.pidfile
 import serial  # pip3 install pyserial
 import gpsd    # pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 import Decode
@@ -15,9 +17,6 @@ sleep_time = 0.5 # seconds
 serial_dev = '/dev/serial0' # RaspberryPi;
 #serial_dev = '/dev/ttyO1' # beaglebone;
 data_dir = '/home/pi/datalogs'
-file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
-raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
-data_file_path = data_dir + '/data-' + file_timestamp + '.csv'
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
 readings_header = 'time,mph,fRpm,rRpm,afr,map,fTemp,fPress,lrh,rrh,utc'
 
@@ -92,36 +91,48 @@ def write_data_file(timestamp,readings):
     global DATA_FILE
     DATA_FILE.write(timestamp + ',' + readings + '\n')
 
-##### MAIN MAIN MAIN ###################################
-init_gps()
-init_nano()
+def record():
+    ##### MAIN MAIN MAIN ###################################
+    init_gps()
+    init_nano()
+    file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
+    raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
+    data_file_path = data_dir + '/data-' + file_timestamp + '.csv'
 
-RAW_LOG_FILE = open(raw_log_file_path,'w')
-print('Writing raw log to ' + raw_log_file_path)
-write_raw_log_header()
+    RAW_LOG_FILE = open(raw_log_file_path,'w')
+    print('Writing raw log to ' + raw_log_file_path)
+    write_raw_log_header()
 
-DATA_FILE = open(data_file_path,'w')
-print('Writing data to ' + data_file_path)
-write_data_header()
+    DATA_FILE = open(data_file_path,'w')
+    print('Writing data to ' + data_file_path)
+    write_data_header()
 
-print('Starting sensor collection loop... Ctrl-C to stop loop')
-while True:
-    try:
-        time.sleep(sleep_time) 
-        # example timestamp: 1526430861.829
-        timestamp = datetime.now().strftime('%s.%f')[:-3]
-        gps_data = Decode.get_gps_data()
-        raw_nano_data = get_raw_nano_data()
-        write_raw_log(timestamp, raw_nano_data, gps_data)
-        # now the processed numbers
-        readings = Decode.get_readings(raw_nano_data, gps_data)
-        write_data_file(timestamp, readings)
-    except KeyboardInterrupt:
-        print("\nShutting down")
-        break
-    except:
-        print("exception in main loop")
+    print('Starting sensor collection loop... Ctrl-C to stop loop')
+    while True:
+        try:
+            time.sleep(sleep_time) 
+            # example timestamp: 1526430861.829
+            timestamp = datetime.now().strftime('%s.%f')[:-3]
+            gps_data = Decode.get_gps_data()
+            raw_nano_data = get_raw_nano_data()
+            write_raw_log(timestamp, raw_nano_data, gps_data)
+            # now the processed numbers
+            readings = Decode.get_readings(raw_nano_data, gps_data)
+            write_data_file(timestamp, readings)
+        except KeyboardInterrupt:
+            print("\nShutting down")
+            break
+        except:
+            print("exception in main loop")
 
-RAW_LOG_FILE.close()
-DATA_FILE.close()
-print('Finished program, data is in ' + data_file_path)
+    RAW_LOG_FILE.close()
+    DATA_FILE.close()
+    print('Finished program, data is in ' + data_file_path)
+
+def run():
+  context = daemon.DaemonContext(pidfile=daemon.pidfile.PIDLockFile('/var/run/record_values.pid'))
+  with context:
+    record()
+
+if __name__ == "__main__":
+    run()
