@@ -12,11 +12,12 @@ cmd_file = '/var/www/bin/pickle_ctl.sh'
 cmd_output = '/tmp/last_cmd'
 
 def check_service():
-    rc = call([cmd_file,"status"])
-    if rc == 0:
-        return True
-    else:
-        return False
+    with open(cmd_output, 'w') as f:
+        rc = call([cmd_file,"status"],stdout=f, stderr=STDOUT)
+        if rc == 0:
+            return True
+        else:
+            return False
 
 def application(environ, start_response):
     global is_running
@@ -36,9 +37,9 @@ def cmd_app():
     with open(cmd_output, 'w') as f:
         rc = 0
         if is_running:
-            rc = call([cmd_file,"stop"])
+            rc = call([cmd_file,"stop"],stdout=f, stderr=STDOUT)
         else:
-            rc = call([cmd_file,"start"])
+            rc = call([cmd_file,"start"],stdout=f, stderr=STDOUT)
         if rc == 0:
             return ('SUCCESS')
         else:
