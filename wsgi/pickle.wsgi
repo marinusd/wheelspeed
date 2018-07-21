@@ -52,6 +52,7 @@ def say_app(environ, start_response, say):
 page_top = """
     <html><head>
     <title>PickleTown</title>
+    <meta http-equiv="refresh" content="15;URL='/pickle'" /> 
     <style>
     form {
       /* Just to center the form on the page */
