@@ -73,9 +73,9 @@ page_top = """
 
 def form():
     if is_running():
-    status = '<p style="color:green;text-align:center">RUNNING</p>'
+        status = '<p style="color:green;text-align:center">RUNNING</p>'
     else:
-    status = '<p style="color:red;text-align:center">STOPPED</p>'
+        status = '<p style="color:red;text-align:center">STOPPED</p>'
     form = """
     <form method="post">
     <button type="submit" style="text-align:center">Start/Stop</button>
