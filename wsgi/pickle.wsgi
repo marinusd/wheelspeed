@@ -11,6 +11,7 @@ is_running = False
 cmd_file = '/var/www/bin/pickle_ctl.sh'
 cmd_output = '/tmp/cmd_output'
 cmd_status = '/tmp/cmd_status'
+data_dir = '/var/www/data'
 
 def check_service():
     with open(cmd_status, 'w') as f:
@@ -90,7 +91,11 @@ def form():
     return status + form
 
 def file_list():
-   return '<a href="/data/raw-2018.csv">raw-2018.csv</a>'
+    flist = ''
+    files = os.listdir(data_dir)
+    for f in files:
+        flist.append('<a href="/data/' + f + '">' + f + '</a><br />')
+    return flist
 
 page_bottom = '</body></html>'
 
