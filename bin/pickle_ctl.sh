@@ -4,7 +4,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 . /lib/lsb/init-functions
 
-DAEMON=/var/www/python/RecordValues.py
+DAEMON=/var/www/bin/RecordValues.py
 PIDFILE=/var/run/RecordValues.pid
 
 test -x $DAEMON || exit 5

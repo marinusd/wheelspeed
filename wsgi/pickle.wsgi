@@ -8,13 +8,14 @@ from subprocess import call
 sys.path.append('/var/www/wsgi-scripts')
 os.environ['PYTHON_EGG_CACHE'] = '/var/www/.python-egg'
 
-# starter pid is not possible
-process_id = 99999999
 def is_running():
     try:
-        os.kill(process_id, 0)
-        return True
+        rc = call(["/usr/bin/sudo","/var/www/bin/pickle_ctl.sh","status"])
     except OSError:
+        print >> environ['wsgi.errors'], '%s: %s' % ('Failure checking status', rckey)
+    if rc == 0:
+        return True
+    else:
         return False
 
 def application(environ, start_response):
