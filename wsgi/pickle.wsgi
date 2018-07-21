@@ -11,7 +11,7 @@ is_running = False
 cmd_file = '/var/www/bin/pickle_ctl.sh'
 cmd_output = '/tmp/cmd_output'
 cmd_status = '/tmp/cmd_status'
-data_dir = '/var/www/data'
+data_dir = '/var/www/html/data'
 
 def check_service():
     with open(cmd_status, 'w') as f:
