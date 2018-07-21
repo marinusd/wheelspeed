@@ -13,7 +13,7 @@ cmd_output = '/tmp/last_cmd'
 
 def check_service():
     with open(cmd_output, 'w') as f:
-        rc = call([cmd_file,"status"],stdout=f, stderr=STDOUT)
+        rc = call([cmd_file,"status"],stdout=f, stderr=f)
         if rc == 0:
             return True
         else:
@@ -37,9 +37,9 @@ def cmd_app():
     with open(cmd_output, 'w') as f:
         rc = 0
         if is_running:
-            rc = call([cmd_file,"stop"],stdout=f, stderr=STDOUT)
+            rc = call([cmd_file,"stop"],stdout=f, stderr=f)
         else:
-            rc = call([cmd_file,"start"],stdout=f, stderr=STDOUT)
+            rc = call([cmd_file,"start"],stdout=f, stderr=f)
         if rc == 0:
             return ('SUCCESS')
         else:
