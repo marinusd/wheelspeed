@@ -94,7 +94,8 @@ def file_list():
     flist = ''
     files = os.listdir(data_dir)
     for f in files:
-        flist.append('<a href="/data/' + f + '">' + f + '</a><br />')
+        fline = '<a href="/data/' + f + '">' + f + '</a><br />'
+        flist += fline
     return flist
 
 page_bottom = '</body></html>'
