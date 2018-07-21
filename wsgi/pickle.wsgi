@@ -9,7 +9,7 @@ os.environ['PYTHON_EGG_CACHE'] = '/var/www/.python-egg'
 
 is_running = False
 cmd_file = '/var/www/bin/pickle_ctl.sh'
-cmd_output = '/var/www/data/last_cmd'
+cmd_output = '/tmp/last_cmd'
 
 def check_service():
     rc = call([cmd_file,"status"])
