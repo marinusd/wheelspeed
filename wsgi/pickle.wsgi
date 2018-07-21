@@ -3,14 +3,16 @@
 import os
 import sys
 import cgi
-
 from subprocess import call
 sys.path.append('/var/www/wsgi-scripts')
 os.environ['PYTHON_EGG_CACHE'] = '/var/www/.python-egg'
+
 is_running = False
+cmd_file = '/var/www/bin/pickle_ctl.sh'
+cmd_output = '/var/www/data/last_cmd'
 
 def check_service():
-    rc = call(["/var/www/bin/pickle_ctl.sh","status"])
+    rc = call([cmd_file,"status"])
     if rc == 0:
         return True
     else:
@@ -31,17 +33,16 @@ def full_page():
     return page_top + form() + file_list() + page_bottom
 
 def cmd_app():
-   #with open('/var/www/data/last_cmd', 'w') as f:
-   #   print >> f, "%s" % (desired)
-   rc = 0
-   if is_running:
-        rc = call(["/var/www/bin/pickle_ctl.sh","stop"])
-   else:
-        rc = call(["/var/www/bin/pickle_ctl.sh","start"])
-   if rc == 0:
-     return ('SUCCESS')
-   else:
-     return ('FAILED')
+    with open(cmd_output', 'w') as f:
+        rc = 0
+        if is_running:
+            rc = call([cmd_file,"stop"])
+        else:
+            rc = call([cmd_file,"start"])
+        if rc == 0:
+            return ('SUCCESS')
+        else:
+            return ('FAILED')
 
 def say_app(environ, start_response, say):
    #print >> environ['wsgi.errors'], 'WSGI OK: %s' % say
