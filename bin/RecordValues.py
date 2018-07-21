@@ -14,7 +14,7 @@ import Decode
 sleep_time = 0.5 # seconds
 serial_dev = '/dev/serial0' # RaspberryPi;
 #serial_dev = '/dev/ttyO1' # beaglebone;
-data_dir = '/home/pi/datalogs'
+data_dir = '/var/www/html/data'
 file_timestamp = datetime.now().strftime('%Y-%m-%d.%H:%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
 data_file_path = data_dir + '/data-' + file_timestamp + '.csv'
