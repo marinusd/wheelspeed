@@ -33,7 +33,7 @@ def full_page():
     return page_top + form() + file_list() + page_bottom
 
 def cmd_app():
-    with open(cmd_output', 'w') as f:
+    with open(cmd_output, 'w') as f:
         rc = 0
         if is_running:
             rc = call([cmd_file,"stop"])
