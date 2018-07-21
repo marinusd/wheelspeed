@@ -21,27 +21,27 @@ def application(environ, start_response):
     is_running = check_service()
     # get the elements
     form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
-    keys = form.keys()
-    keys.sort()
-    for key in keys:
-        print >> environ['wsgi.errors'], '%s: %s' % (key, form[key])
+    if 'toggle' in form.keys():
+        result = cmd_app()
+        print >> environ['wsgi.errors'], '%s: %s' % ('ToggleResult', result)
+        is_running = check_service()
     return say_app(environ, start_response, full_page())
 
 def full_page():
     return page_top + form() + file_list() + page_bottom
 
 def cmd_app():
-   with open('/var/www/data/last_cmd', 'w') as f:
-      print >> f, "%s" % (desired)
+   #with open('/var/www/data/last_cmd', 'w') as f:
+   #   print >> f, "%s" % (desired)
    rc = 0
    if is_running:
         rc = call(["/var/www/bin/pickle_ctl.sh","stop"])
    else:
         rc = call(["/var/www/bin/pickle_ctl.sh","start"])
    if rc == 0:
-     return ('CMD SUBMITTED')
+     return ('SUCCESS')
    else:
-     return ('CMD FAILED')
+     return ('FAILED')
 
 def say_app(environ, start_response, say):
    #print >> environ['wsgi.errors'], 'WSGI OK: %s' % say
@@ -80,6 +80,7 @@ def form():
         status = '<p style="color:red;text-align:center">STOPPED</p>'
     form = """
     <form method="post">
+    <input type="hidden" name="toggle" value="yes">
     <button type="submit" style="text-align:center">Start/Stop</button>
     </form>
     """
