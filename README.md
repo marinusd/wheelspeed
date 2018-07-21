@@ -14,5 +14,5 @@ Pre-requisites
 
 # add to /etc/apache2/mods-available/wsgi.conf:
 
-    WSGIScriptAlias /bin/   /var/www/bin/
-    WSGIScriptAlias /pickle /var/www/bin/pickle.wsgi
+    WSGIScriptAlias /wsgi/  /var/www/wsgi/
+    WSGIScriptAlias /pickle /var/www/wsgi/pickle.wsgi
