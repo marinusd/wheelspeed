@@ -7,10 +7,11 @@ import cgi
 from subprocess import call
 sys.path.append('/var/www/wsgi-scripts')
 os.environ['PYTHON_EGG_CACHE'] = '/var/www/.python-egg'
+is_running = False
 
-def is_running():
+def check_service():
     try:
-        rc = call(["/usr/bin/sudo","/var/www/bin/pickle_ctl.sh","status"])
+        rc = call(["/var/www/bin/pickle_ctl.sh","status"])
     except OSError:
         print >> environ['wsgi.errors'], '%s: %s' % ('Failure checking status', rckey)
     if rc == 0:
@@ -19,6 +20,7 @@ def is_running():
         return False
 
 def application(environ, start_response):
+    is_running = check_service()
     # get the elements
     form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
     keys = form.keys()
@@ -30,14 +32,14 @@ def application(environ, start_response):
 def full_page():
     return page_top + form() + file_list() + page_bottom
 
-def cmd_app(desired):
+def cmd_app():
    with open('/var/www/data/last_cmd', 'w') as f:
       print >> f, "%s" % (desired)
    rc = 0
-   if is_running():
-       rc = call(["/usr/bin/sudo","/var/www/wsgi/pins/touch_east"])
+   if is_running:
+        rc = call(["/var/www/bin/pickle_ctl.sh","stop"])
    else:
-       rc = call(["/usr/bin/sudo","/var/www/wsgi/pins/touch_east"])
+        rc = call(["/var/www/bin/pickle_ctl.sh","start"])
    if rc == 0:
      return ('CMD SUBMITTED')
    else:
@@ -73,7 +75,7 @@ page_top = """
     """
 
 def form():
-    if is_running():
+    if is_running:
         status = '<p style="color:green;text-align:center">RUNNING</p>'
     else:
         status = '<p style="color:red;text-align:center">STOPPED</p>'
