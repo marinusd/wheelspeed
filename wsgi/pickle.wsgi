@@ -10,16 +10,14 @@ os.environ['PYTHON_EGG_CACHE'] = '/var/www/.python-egg'
 is_running = False
 
 def check_service():
-    try:
-        rc = call(["/var/www/bin/pickle_ctl.sh","status"])
-    except OSError:
-        print >> environ['wsgi.errors'], '%s: %s' % ('Failure checking status', rckey)
+    rc = call(["/var/www/bin/pickle_ctl.sh","status"])
     if rc == 0:
         return True
     else:
         return False
 
 def application(environ, start_response):
+    global is_running
     is_running = check_service()
     # get the elements
     form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
