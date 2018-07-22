@@ -91,12 +91,13 @@ def form():
     return status + form
 
 def file_list():
-    flist = ''
+    flist = '<p style="color:blue;text-align:center">'
     files = os.listdir(data_dir)
+    files.sort()
     for f in files:
         fline = '<a href="/data/' + f + '">' + f + '</a><br />'
         flist += fline
-    return flist
+    return flist + '</p>'
 
 page_bottom = '</body></html>'
 
