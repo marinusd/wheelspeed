@@ -12,7 +12,7 @@ test -x $DAEMON || exit 5
 case $1 in
     start)
         log_daemon_msg "Starting RecordValues server" "RecordValues"
-        start-stop-daemon --start --background --make-pidfile --pidfile $PIDFILE --exec $DAEMON --
+        start-stop-daemon --start --background --no-close --make-pidfile --pidfile $PIDFILE --exec $DAEMON --
         status=$?
         log_end_msg $status
         ;;
