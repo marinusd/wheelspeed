@@ -12,13 +12,13 @@ test -x $DAEMON || exit 5
 case $1 in
     start)
         log_daemon_msg "Starting RecordValues server" "RecordValues"
-        start-stop-daemon --start --quiet --oknodo --pidfile $PIDFILE --startas $DAEMON --
+        start-stop-daemon --start --background --make-pidfile --pidfile $PIDFILE --exec $DAEMON --
         status=$?
         log_end_msg $status
         ;;
     stop)
         log_daemon_msg "Stopping RecordValues server" "RecordValues"
-        start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
+        start-stop-daemon --stop --remove-pidfile --pidfile $PIDFILE
         log_end_msg $?
         rm -f $PIDFILE
         ;;
@@ -26,7 +26,7 @@ case $1 in
         $0 stop && sleep 2 && $0 start
         ;;
     status)
-        status_of_proc $DAEMON "RecordValues server"
+        start-stop-daemon --status --pidfile $PIDFILE $DAEMON "RecordValues server"
         ;;
     *)
         echo "Usage: $0 {start|stop|restart|status}"

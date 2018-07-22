@@ -16,3 +16,7 @@ Pre-requisites
 
     WSGIScriptAlias /wsgi/  /var/www/wsgi/
     WSGIScriptAlias /pickle /var/www/wsgi/pickle.wsgi
+
+# cat > /etc/sudoers.d/020_www-data-nopasswd <<EOF
+www-data ALL=(ALL) NOPASSWD: ALL
+EOF
