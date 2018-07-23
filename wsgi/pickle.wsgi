@@ -56,7 +56,7 @@ def say_app(environ, start_response, say):
 page_top = """
     <html><head>
     <title>PickleTown</title>
-    <meta http-equiv="refresh" content="15;URL='/pickle'" /> 
+    <meta http-equiv="refresh" content="15;URL='/pickle'" />
     <style>
     form {
       /* Just to center the form on the page */
@@ -66,6 +66,16 @@ page_top = """
       padding: 1em;
       border: 1px solid #CCC;
       border-radius: 1em;
+      background-color: #e7e7e7;
+    }
+    button {
+        text-align: center;
+        margin: 0 auto;
+        display:block;
+        font-size: 16px;
+        background-color: blue;
+        color: white;
+        border-radius: 1em;
     }
     input:focus, textarea:focus {
       /* To give a little highlight on active elements */
@@ -79,13 +89,13 @@ page_top = """
 
 def form():
     if is_running:
-        status = '<p style="color:green;text-align:center">RUNNING</p>'
+        status = '<p style="color:green;text-align:center;font-size:18px;">RUNNING</p>'
     else:
-        status = '<p style="color:red;text-align:center">STOPPED</p>'
+        status = '<p style="color:red;text-align:center;font-size:18px;">STOPPED</p>'
     form = """
     <form method="post">
     <input type="hidden" name="toggle" value="yes">
-    <button type="submit" style="text-align:center">Start/Stop</button>
+    <button type="submit">Start/Stop</button>
     </form>
     """
     return status + form
@@ -93,10 +103,11 @@ def form():
 def file_list():
     flist = '<p style="color:blue;text-align:center">'
     files = os.listdir(data_dir)
-    files.sort()
+    files.sort(reverse=True)
     for f in files:
-        fline = '<a href="/data/' + f + '">' + f + '</a><br />'
-        flist += fline
+        if f.startswith('data'):
+            fline = '<a href="/data/' + f + '">' + f + '</a><br />'
+            flist += fline
     return flist + '</p>'
 
 page_bottom = '</body></html>'
