@@ -96,11 +96,11 @@ def write_data_file(timestamp,readings):
 init_gps()
 init_nano()
 
-RAW_LOG_FILE = open(raw_log_file_path,'w')
+RAW_LOG_FILE = open(raw_log_file_path,mode='w',buffering=1)
 print('Writing raw log to ' + raw_log_file_path)
 write_raw_log_header()
 
-DATA_FILE = open(data_file_path,'w')
+DATA_FILE = open(data_file_path,mode='w',buffering=1)
 print('Writing data to ' + data_file_path)
 write_data_header()
 
