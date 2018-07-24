@@ -10,13 +10,15 @@ Suggest this be checked out under /var as /var/www
 
 Pre-requisites
 =====
-# apt-get install apache2 libapache2-mod-wsgi
+apt-get install apache2 libapache2-mod-wsgi
 
-# add to /etc/apache2/mods-available/wsgi.conf:
+add to /etc/apache2/mods-available/wsgi.conf:
 
     WSGIScriptAlias /wsgi/  /var/www/wsgi/
     WSGIScriptAlias /pickle /var/www/wsgi/pickle.wsgi
 
-# cat > /etc/sudoers.d/020_www-data-nopasswd <<EOF
+cat > /etc/sudoers.d/020_www-data-nopasswd <<EOF
 www-data ALL=(ALL) NOPASSWD: ALL
 EOF
+
+apt-get install gpsd
