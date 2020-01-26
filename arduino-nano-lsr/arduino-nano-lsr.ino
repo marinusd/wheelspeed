@@ -1,5 +1,5 @@
 // Gen IV module sketch
-const long Version = 20180616;  // 2018-06-16
+const long Version = 20200112; 
 const char subVersion = 'a';
 
 // Digital Pins
@@ -34,7 +34,7 @@ const int pinRightRideHeight = A0; // small diameter white
 const int pinLeftRideHeight  = A1; // small diameter green
 
 // 0V-5V input pins
-int rawAirFuelRatio, rawManifoldAbsolutePressure;
+int rawAirFuelRatio, rawManifoldAbsolutePressure = 0;
 const int pinManifoldAbsolutePressure = A2; //grey
 const int pinAirFuelRatio             = A3; // large green
 
@@ -72,17 +72,17 @@ void setup ()
 
   // pullup the unused digital pins
   // 0&1 are serial, 2&3 are wheel sensor
-  pinMode(4, INPUT_PULLUP);
-  pinMode(5, INPUT_PULLUP);
-  pinMode(6, INPUT_PULLUP);
-  pinMode(7, INPUT_PULLUP);
-  pinMode(8, INPUT_PULLUP);
-  pinMode(9, INPUT_PULLUP);
+  pinMode( 4, INPUT_PULLUP);
+  pinMode( 5, INPUT_PULLUP);
+  pinMode( 6, INPUT_PULLUP);
+  pinMode( 7, INPUT_PULLUP);
+  pinMode( 8, INPUT_PULLUP);
+  pinMode( 9, INPUT_PULLUP);
   pinMode(10, INPUT_PULLUP);
   pinMode(11, INPUT_PULLUP);
   pinMode(12, INPUT_PULLUP);
 
-  Serial.println(" Finished.");
+  Serial.println(" Finished setup.");
   printHeader();
 } // end of setup
 
@@ -105,7 +105,7 @@ void resetCounts() {
   frontCount = 0;
   rearCount  = 0;
   interrupts (); // interrupts on again
-  Serial.println("Wheel counts reset");
+  Serial.println("Wheel counts reset.");
 }
 
 // for tracking wheel speed
