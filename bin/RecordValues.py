@@ -119,8 +119,8 @@ while True:
     except KeyboardInterrupt:
         print("\nShutting down")
         break
-    except:
-        print("exception in main loop")
+    except Exception as e:
+        print("exception in main loop: " + str(e))
 
 RAW_LOG_FILE.close()
 DATA_FILE.close()
