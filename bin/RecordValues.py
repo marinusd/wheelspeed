@@ -12,8 +12,8 @@ import Decode
 
 # constants
 sleep_time = 0.5 # seconds
-serial_dev = '/dev/serial0' # RaspberryPi;
-#serial_dev = '/dev/ttyO1' # beaglebone;
+serial_dev = '/dev/serial0' # NANO connected via rPi UART;
+serial_dev = '/dev/ttyUSB1' # NANO connected via rPi USB;
 data_dir = '/var/www/html/data'
 file_timestamp = datetime.now().strftime('%Y-%m-%d_%H:%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
@@ -69,15 +69,22 @@ def get_raw_nano_data():
     try:
         NANO.write(str('d').encode())
         raw_nano_data = NANO.readline().decode('ascii').rstrip()
-    except:
-        print("exception in get_raw_nano_data")
+    except Exception as e:
+        print("exception in get_raw_nano_data: " + str(e))
     return raw_nano_data
 
 def write_raw_log_header():
     global NANO
     global RAW_LOG_FILE
-    NANO.write(str('h').encode())
-    nano_header = NANO.readline().decode('ascii').rstrip()
+    nano_header = ''
+    for i in range(3):
+      try:
+          NANO.write(str('h').encode())
+          nano_header = NANO.readline().decode('ascii').rstrip()
+      except Exception as e:
+          print("exception in write_raw_log_header: " + str(e))
+      time.sleep(2)
+    print("nano_header: " + nano_header)
     RAW_LOG_FILE.write('timestamp,' + nano_header + ',' + gps_header + '\n')
 
 def write_raw_log(timestamp,raw_nano_data,gps_data):
@@ -112,10 +119,15 @@ while True:
         timestamp = datetime.now().strftime('%s.%f')[:-3]
         gps_data = Decode.get_gps_data()
         raw_nano_data = get_raw_nano_data()
-        write_raw_log(timestamp, raw_nano_data, gps_data)
         # now the processed numbers
         readings = Decode.get_readings(raw_nano_data, gps_data)
-        write_data_file(timestamp, readings)
+	# only write if we are moving
+        (mph,fRpm,rRpm) = readings.split(',')[0:3]
+        if int(mph)>1 or int(rRpm)>1 or int(rRpm)>1:
+          write_raw_log(timestamp, raw_nano_data, gps_data)
+          write_data_file(timestamp, readings)
+        #else:
+        #  print("MPH: %s fRPM: %s rRPM: %s - not enough movement." % (str(mph),str(fRpm),str(rRpm)))
     except KeyboardInterrupt:
         print("\nShutting down")
         break
