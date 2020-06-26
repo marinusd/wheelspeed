@@ -1,5 +1,5 @@
 // Gen IV module sketch
-const long Version = 20200112; 
+const long Version = 20200626;
 const char subVersion = 'a';
 
 // Digital Pins
