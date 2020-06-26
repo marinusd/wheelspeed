@@ -89,7 +89,7 @@ def write_raw_log_header():
 
 def write_raw_log(timestamp,raw_nano_data,gps_data):
     global RAW_LOG_FILE
-    RAW_LOG_FILE.write(timestamp + ',' +raw_nano_data + ',' + gps_data + '\n')
+    RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + gps_data + '\n')
 
 def write_data_header():
     global DATA_FILE
@@ -121,6 +121,7 @@ while True:
         raw_nano_data = get_raw_nano_data()
         # now the processed numbers
         readings = Decode.get_readings(raw_nano_data, gps_data)
+        # readingsCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
 	# only write if we are moving
         (mph,fRpm,rRpm) = readings.split(',')[0:3]
         if int(mph)>1 or int(rRpm)>1 or int(rRpm)>1:

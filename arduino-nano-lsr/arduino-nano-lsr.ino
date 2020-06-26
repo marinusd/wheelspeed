@@ -35,7 +35,7 @@ const int pinLeftRideHeight  = A1; // small diameter green
 
 // 0V-5V input pins
 int rawAirFuelRatio, rawManifoldAbsolutePressure = 0;
-const int pinManifoldAbsolutePressure = A2; //grey
+const int pinManifoldAbsolutePressure = A2; // grey
 const int pinAirFuelRatio             = A3; // large green
 
 // voltage divider pins; feed 5V in, get something less back

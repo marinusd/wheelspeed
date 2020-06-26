@@ -4,7 +4,7 @@ import os
 import sys
 import cgi
 from subprocess import call
-sys.path.append('/var/www/wsgi-scripts')
+sys.path.append('/var/www/wsgi')
 os.environ['PYTHON_EGG_CACHE'] = '/var/www/.python-egg'
 
 is_running = False
