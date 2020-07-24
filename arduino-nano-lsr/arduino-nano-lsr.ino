@@ -1,5 +1,5 @@
 // Gen IV module sketch
-const long Version = 20200626;
+const long Version = 20200724;
 const char subVersion = 'a';
 
 // Digital Pins
@@ -101,7 +101,7 @@ void rearPulseISR ()
 
 void resetCounts() {
   // zero  wheel sensor data
-  noInterrupts ();  // don't allow changes while we read the volatiles
+  noInterrupts ();  // don't allow changes while we write the volatiles
   frontCount = 0;
   rearCount  = 0;
   interrupts (); // interrupts on again
@@ -190,34 +190,37 @@ void loop ()
 {
   // we check for an incoming command
   if (Serial.available() > 0) {
+    // show we're processing a command
+    digitalWrite(ledPin, HIGH);
 
+    command = '?';  // set a non-active value to start
     // throw away all but the last command byte
     while (Serial.available() > 0) {
       incomingByte = Serial.read();
-      if (incomingByte != 10) {  // strip final line feed for IDE Serial Monitor
+      if (incomingByte != 10) {  // ignore final line feed from the Arduino IDE Serial Monitor
         command = incomingByte;
       }
     }
-    digitalWrite(ledPin, HIGH); // showing we're doing something
 
     // we have a Byte - what is it?
-    if (command == 'd') {
-      printOutput();  // this also does the reads()
-
-    } else if (command == 'h') {
-      printHeader();
-
-    } else if (command == 'v') {
-      printSketchVersion();
-
-    } else if (command == 'z') {
-      resetCounts();
-
-    } else {
-      Serial.print(" ? Send h for header, d for data, v for version, z to zero wheel counts. Received: "); Serial.println(command);
+    switch (command) {
+      case 'd':
+        printOutput();  // this also does the reads()
+        break;
+      case 'h':
+        printHeader();
+        break;
+      case 'v':
+        printSketchVersion();
+        break;
+      case 'z':
+        resetCounts();
+        break;
+      default:
+        Serial.print("Send h for header, d for data, v for version, z to zero wheel counts. Received: "); Serial.println(command);
+        break;
     }
-
-  } // the end of the if; we come here immediately when there's no incoming command
+  } // the end of the if statement; we come here immediately when there's no incoming serial data
 
   delay(100); // pause a tenth of a second; a caller will wait on average 1/2 of that
   digitalWrite(ledPin, LOW); // this may already be off
