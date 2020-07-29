@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#  version 2018-05-27
+#  version 2020-07-29
 # Basic approach for reporting:
 #  1. Write a logfile with the raw values
 #  2. Write a datafile with calculated info
@@ -11,11 +11,11 @@ import gpsd    # pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 import Decode
 
 # constants
-sleep_time = 0.5 # seconds
+sleep_time = 0.4 # seconds
 serial_dev = '/dev/serial0' # NANO connected via rPi UART;
-serial_dev = '/dev/ttyUSB1' # NANO connected via rPi USB;
+serial_dev = '/dev/ttyUSB0' # NANO connected via rPi USB;
 data_dir = '/var/www/html/data'
-file_timestamp = datetime.now().strftime('%Y-%m-%d_%H:%M')
+file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
 data_file_path = data_dir + '/data-' + file_timestamp + '.csv'
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
@@ -48,7 +48,7 @@ def init_nano():
 
 def init_gps():
     i = 0
-    while i < 3:
+    while i < 9:
         try:
             gpsd.connect()   # gpsd daemon should be running in O.S.
         except:
@@ -84,7 +84,7 @@ def write_raw_log_header():
       except Exception as e:
           print("exception in write_raw_log_header: " + str(e))
       time.sleep(2)
-    print("nano_header: " + nano_header)
+    #print("nano_header: " + nano_header)
     RAW_LOG_FILE.write('timestamp,' + nano_header + ',' + gps_header + '\n')
 
 def write_raw_log(timestamp,raw_nano_data,gps_data):

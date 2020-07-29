@@ -16,7 +16,7 @@ UTC = ''
 def get_gps_data():
     global MPH
     global UTC
-    lat = lon = alt = MPH = UTC = '' # make them empty strings
+    lat = lon = alt = MPH = UTC = '0' # make them numeric
     try:
         packet = gpsd.get_current()
         if (packet.mode >= 2):
@@ -26,8 +26,8 @@ def get_gps_data():
             UTC = str(packet.time)
         if (packet.mode >= 3):
             alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
-    except:
-        print("Exception in get_gps_data")
+    except Exception as e:
+        print("exception in Decode:get_gps_data: " + str(e))
     return lat + ',' + lon + ',' + alt + ',' + MPH + ',' + UTC
 
 def get_axle_rpm(pulseCount,elapsedMicros):
@@ -82,32 +82,36 @@ def get_map(pinValue):
     return map_val
 
 def get_readings(raw_nano_data,gps_data):
-    mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = ''
-    # cook the nano data
-    (millis,
-    frontCount,deltaFrontCount,deltaFrontMicros,
-    rearCount,deltaRearCount,deltaRearMicros,
-    rawLeftRideHeight,rawRightRideHeight,
-    rawFuelPressure,rawFuelTemperature,
-    rawGearPosition,rawAirFuelRatio,
-    rawManifoldAbsolutePressure,rawExhaustGasTemperature
-    ) = raw_nano_data.split(',')
-    (lat,lon,alt,mph,utc) = gps_data.split(',')
-    # calcs and transforms
-    fRpm = get_axle_rpm(int(deltaFrontCount),int(deltaFrontMicros))
-    # println(utc + ' FrontRPM' + fRpm)
-    rRpm = get_axle_rpm(int(deltaRearCount),int(deltaRearMicros))
-    # println(utc + ' RearRPM' + rRpm)
-    afr = get_afr(int(rawAirFuelRatio))
-    #### println(utc + ' RearRPM' + rRpm)
-    man = get_map(int(rawManifoldAbsolutePressure))
-    ft  = get_fuel_temperature(int(rawFuelTemperature))
-    fp  = get_fuel_pressure(int(rawFuelPressure))
-    lrh = get_ride_height(int(rawLeftRideHeight))
-    rrh = get_ride_height(int(rawRightRideHeight))
-    #gp  = get_gear_position(int(rawGearPosition))
-    #egt = get_egt(int(rawExhaustGasTemperature))
-    # returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
+    mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = '0'
+    try:
+      # cook the nano data
+      (millis,
+      frontCount,deltaFrontCount,deltaFrontMicros,
+      rearCount,deltaRearCount,deltaRearMicros,
+      rawLeftRideHeight,rawRightRideHeight,
+      rawFuelPressure,rawFuelTemperature,
+      rawGearPosition,rawAirFuelRatio,
+      rawManifoldAbsolutePressure,rawExhaustGasTemperature
+      ) = raw_nano_data.split(',')
+      (lat,lon,alt,mph,utc) = gps_data.split(',')
+      # calcs and transforms
+      fRpm = get_axle_rpm(int(deltaFrontCount),int(deltaFrontMicros))
+      # println(utc + ' FrontRPM' + fRpm)
+      rRpm = get_axle_rpm(int(deltaRearCount),int(deltaRearMicros))
+      # println(utc + ' RearRPM' + rRpm)
+      afr = get_afr(int(rawAirFuelRatio))
+      #### println(utc + ' RearRPM' + rRpm)
+      man = get_map(int(rawManifoldAbsolutePressure))
+      ft  = get_fuel_temperature(int(rawFuelTemperature))
+      fp  = get_fuel_pressure(int(rawFuelPressure))
+      lrh = get_ride_height(int(rawLeftRideHeight))
+      rrh = get_ride_height(int(rawRightRideHeight))
+      #gp  = get_gear_position(int(rawGearPosition))
+      #egt = get_egt(int(rawExhaustGasTemperature))
+    except Exception as e:
+        print("exception in Decode:get_readings: " + str(e))
+
+    #returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
     #print('MPH ' + MPH + ' fRPM ' + fRpm + ' rRPM ' + rRpm + ' ' + UTC)
     return ( mph + ',' +
             fRpm + ',' +
