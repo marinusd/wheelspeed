@@ -8,12 +8,14 @@ from datetime import datetime
 import time
 import serial  # pip3 install pyserial
 import gpsd    # pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
+import os
 
 # constants
 sleep_time = 0.2 # seconds
 serial_dev = '/dev/serial0' # NANO connected via rPi UART;
 serial_dev = '/dev/ttyUSB0' # NANO connected via rPi USB;
 data_dir = '/var/www/html/data'
+current_symlink = data_dir+'/current'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
 
@@ -124,6 +126,9 @@ init_gps()
 init_nano()
 
 RAW_LOG_FILE = open(raw_log_file_path,mode='w',buffering=1)
+if os.path.islink(current_symlink):
+  os.unlink(current_symlink)
+os.symlink(raw_log_file_path,current_symlink)
 print('Writing raw log to ' + raw_log_file_path)
 write_raw_log_header()
 
