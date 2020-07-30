@@ -2,28 +2,26 @@
 
 #  version 2020-07-29
 # Basic approach for reporting:
-#  1. Write a logfile with the raw values
-#  2. Write a datafile with calculated info
+#  1. Write a logfile with the raw values (RecordValues)
+#  2. Decode the values after the run. (Decode)
 from datetime import datetime
 import time
 import serial  # pip3 install pyserial
 import gpsd    # pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
-import Decode
 
 # constants
-sleep_time = 0.4 # seconds
+sleep_time = 0.2 # seconds
 serial_dev = '/dev/serial0' # NANO connected via rPi UART;
 serial_dev = '/dev/ttyUSB0' # NANO connected via rPi USB;
 data_dir = '/var/www/html/data'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
-data_file_path = data_dir + '/data-' + file_timestamp + '.csv'
+
+nano_header = 'timestamp,millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature'
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
-readings_header = 'time,mph,fRpm,rRpm,afr,map,fTemp,fPress,lrh,rrh,utc'
 
 # globals
 NANO = 0
-DATA_FILE = 0
 RAW_LOG_FILE = 0
 
 ##### FUNCTIONS #############################################
@@ -69,7 +67,7 @@ def init_gps():
 
 def get_raw_nano_data():
     global NANO
-    raw_nano_data = ''
+    raw_nano_data = '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'
     try:
         NANO.write(str('d').encode())
         raw_nano_data = NANO.readline().decode('ascii').rstrip()
@@ -77,31 +75,49 @@ def get_raw_nano_data():
         print("exception in get_raw_nano_data: " + str(e))
     return raw_nano_data
 
+def get_gps_data():
+    lat = lon = alt = mph = utc = '0' # make them numeric
+    try:
+        packet = gpsd.get_current()
+        if (packet.mode >= 2):
+            lat = str(packet.lat)
+            lon = str(packet.lon)
+            mph = str(int(packet.hspeed * 2.2369363)) # speed in m/s, we use mph
+            utc = str(packet.time)
+        if (packet.mode >= 3):
+            alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
+    except Exception as e:
+        print("exception in get_gps_data: " + str(e))
+    return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
+
+def get_wheel_rpm(pulseCount,elapsedMicros):
+    micros_per_minute = 1000000 * 60 # microseconds
+    # one magnet per wheel means one pulse per revolution
+    pulses_per_minute = 0
+    if pulseCount > 0:
+        average_pulse_micros = (elapsedMicros / pulseCount)  # each pulse took, on average
+        pulses_per_minute = micros_per_minute / average_pulse_micros
+    return int(pulses_per_minute) # int throws away the fraction
+
+def get_wheel_rpms(raw_nano_data):
+    # millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,
+    nano_data = raw_nano_data.split(',')
+    deltaFrontCount  = int(nano_data[2])
+    deltaFrontMicros = int(nano_data[3])
+    deltaRearCount   = int(nano_data[5])
+    deltaRearMicros  = int(nano_data[6])
+    fRpm = get_wheel_rpm(deltaFrontCount,deltaFrontMicros)
+    rRpm = get_wheel_rpm(deltaRearCount,deltaRearMicros)
+    return(fRpm,rRpm)
+
 def write_raw_log_header():
-    global NANO
     global RAW_LOG_FILE
-    nano_header = ''
-    for i in range(3):
-      try:
-          NANO.write(str('h').encode())
-          nano_header = NANO.readline().decode('ascii').rstrip()
-      except Exception as e:
-          print("exception in write_raw_log_header: " + str(e))
-      time.sleep(2)
-    #print("nano_header: " + nano_header)
     RAW_LOG_FILE.write('timestamp,' + nano_header + ',' + gps_header + '\n')
 
 def write_raw_log(timestamp,raw_nano_data,gps_data):
     global RAW_LOG_FILE
     RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + gps_data + '\n')
 
-def write_data_header():
-    global DATA_FILE
-    DATA_FILE.write(readings_header + '\n')
-
-def write_data_file(timestamp,readings):
-    global DATA_FILE
-    DATA_FILE.write(timestamp + ',' + readings + '\n')
 
 ##### MAIN MAIN MAIN ###################################
 init_gps()
@@ -111,26 +127,23 @@ RAW_LOG_FILE = open(raw_log_file_path,mode='w',buffering=1)
 print('Writing raw log to ' + raw_log_file_path)
 write_raw_log_header()
 
-DATA_FILE = open(data_file_path,mode='w',buffering=1)
-print('Writing data to ' + data_file_path)
-write_data_header()
-
 print('Starting sensor collection loop... Ctrl-C to stop loop')
 while True:
     try:
         time.sleep(sleep_time) 
         # example timestamp: 1526430861.829
         timestamp = datetime.now().strftime('%s.%f')[:-3]
-        gps_data = Decode.get_gps_data()
+
+        gps_data = get_gps_data()
+        mph = int(gps_data.split(',')[3])
+
         raw_nano_data = get_raw_nano_data()
-        # now the processed numbers
-        readings = Decode.get_readings(raw_nano_data, gps_data)
-        # readingsCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
+        (fRpm,rRpm) = get_wheel_rpms(raw_nano_data)
+
+        #print('MPH: ' + str(mph) + 'fRpm: ' + str(fRpm) + ' rRpm: ' + str(rRpm))
 	# only write if we are moving
-        (mph,fRpm,rRpm) = readings.split(',')[0:3]
-        if int(mph)>1 or int(rRpm)>1 or int(rRpm)>1:
+        if 1==1 or mph>1 or fRpm>1 or rRpm>1:
           write_raw_log(timestamp, raw_nano_data, gps_data)
-          write_data_file(timestamp, readings)
         #else:
         #  print("MPH: %s fRPM: %s rRPM: %s - not enough movement." % (str(mph),str(fRpm),str(rRpm)))
     except KeyboardInterrupt:
@@ -140,5 +153,4 @@ while True:
         print("exception in main loop: " + str(e))
 
 RAW_LOG_FILE.close()
-DATA_FILE.close()
-print('Finished program, data is in ' + data_file_path)
+print('Finished program, raw_data is in ' + raw_log_file_path)

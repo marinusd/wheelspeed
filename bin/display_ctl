@@ -1,0 +1,45 @@
+#!/bin/bash
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+. /lib/lsb/init-functions
+
+DAEMON=/var/www/bin/PickleDisplay.py
+PROCESS=$(basename $DAEMON)
+PREFIX=${PROCESS%.py}
+PIDFILE=/var/run/${PREFIX}.pid
+LOGFILE=/var/log/${PREFIX}.log
+
+# tag each entry from this script
+NOW="$(date +%s) cron"
+
+unset RUNNING
+if [[ -s $PIDFILE ]]; then
+  PID=$(<$PIDFILE)
+  kill -0 $PID 2>/dev/null
+  if [[ $? -eq 0 ]]; then
+    PROC_FOUND=$(grep -c "$PROCESS" /proc/${PID}/cmdline)
+    if [[ $PROC_FOUND -eq 1 ]]; then
+      RUNNING=true
+    else
+      echo "$NOW: $PROCESS not in cmdline for PID $PID"
+      PS_FOUND=$(ps xa|grep ${PROCESS}|grep -vc grep)
+      if [[ $PS_FOUND -eq 1 ]]; then
+        RUNNING=true	
+      else
+        echo "$NOW: $PROCESS not in ps output"
+      fi
+    fi
+  else
+    echo "$NOW: PIDFILE found, but PID $PID not running"
+  fi
+else
+  echo "$NOW: No PIDFILE found"
+fi
+
+if [[ -n $RUNNING ]]; then
+  : # running, so no output
+else
+  echo "$NOW: ${PROCESS} not running, starting it"
+  start-stop-daemon --start --background --no-close --make-pidfile --pidfile $PIDFILE --exec $DAEMON -- >$LOGFILE 2>&1
+fi
