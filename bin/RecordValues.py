@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 #  version 2020-07-29
 # Basic approach for reporting:
@@ -47,21 +47,25 @@ def init_nano():
         print('Nano not open? How can be?')
 
 def init_gps():
-    i = 0
-    while i < 9:
-        try:
-            gpsd.connect()   # gpsd daemon should be running in O.S.
-        except:
-            print("cannot connect to gpsd daemon")
-            time.sleep(1.5)
-            i = i + 1
-        else:
-            break
-    packet = gpsd.get_current()  # this will blow up if we are not connected
-    if (packet.mode > 1):   # then we have either a 2D or 3D fix
+  i = 0
+  while i < 9:
+    try:
+      gpsd.connect()   # gpsd daemon should be running in O.S.
+    except Exception as e:
+      print("init_gps: cannot connect to gpsd daemon: " +str(e))
+      time.sleep(1.5)
+      continue
+    try:
+      packet = gpsd.get_current()  # this will blow up if we are not connected
+      if (packet.mode > 1):   # then we have either a 2D or 3D fix
         print('GPS position: ' + str(packet.position()))
-    else:
-        print('GPS: no position fix from device: ' + str(gpsd.device()))
+      else:
+        print('GPS: no position fix from device yet: ' + str(gpsd.device()))
+      break
+    except:
+      print("init_gps:exception getting current position")
+      time.sleep(1.5)
+
 
 def get_raw_nano_data():
     global NANO
