@@ -4,7 +4,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 . /lib/lsb/init-functions
 
-DAEMON=/var/www/bin/RecordValues.py
+DAEMON=/var/www/bin/PickleRecorder.py
 PROCESS=$(basename $DAEMON)
 PREFIX=${PROCESS%.py}
 PIDFILE=/var/run/${PREFIX}.pid

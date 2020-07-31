@@ -1,5 +1,5 @@
 #!/bin/bash
 
-sudo kill -SIGINT $(</var/run/RecordValues.pid)
-cat /var/log/RecordValues.log
+sudo kill -SIGINT $(</var/run/PickleRecorder.pid)
+cat /var/log/PickleRecorder.log
 
