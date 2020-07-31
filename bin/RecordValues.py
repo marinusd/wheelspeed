@@ -19,7 +19,7 @@ current_symlink = data_dir+'/current'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
 
-nano_header = 'timestamp,millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature'
+nano_header = 'millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature'
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
 
 # globals

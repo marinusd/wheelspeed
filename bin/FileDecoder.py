@@ -1,34 +1,14 @@
 #!/usr/bin/env python3
 
-#  version 2018-05-27
+#  version 2020-07-31
 from datetime import datetime
 import time
-import gpsd    #  pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
+import sys
+import os
 
 # constants
 micros_per_minute = 1000000 * 60 # microseconds
 analog_factor = 0.004887585  # 0 = 0V, 512 = ~2.5V, 1023 = 5V
-
-# globals
-MPH = ''
-UTC = ''
-
-def get_gps_data():
-    global MPH
-    global UTC
-    lat = lon = alt = MPH = UTC = '0' # make them numeric
-    try:
-        packet = gpsd.get_current()
-        if (packet.mode >= 2):
-            lat = str(packet.lat)
-            lon = str(packet.lon)
-            MPH = str(int(packet.hspeed * 2.2369363)) # speed in m/s, we use mph
-            UTC = str(packet.time)
-        if (packet.mode >= 3):
-            alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
-    except Exception as e:
-        print("exception in Decode:get_gps_data: " + str(e))
-    return lat + ',' + lon + ',' + alt + ',' + MPH + ',' + UTC
 
 def get_axle_rpm(pulseCount,elapsedMicros):
     # one magnet per wheel means one pulse per revolution
@@ -81,26 +61,23 @@ def get_map(pinValue):
     map_val = whole + '.' + fraction[:1]  # return one fractional digit
     return map_val
 
-def get_readings(raw_nano_data,gps_data):
+def get_readings(raw_data):
     mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = '0'
     try:
-      # cook the nano data
-      (millis,
+      # cook the raw data
+      (timestamp,millis,
       frontCount,deltaFrontCount,deltaFrontMicros,
       rearCount,deltaRearCount,deltaRearMicros,
       rawLeftRideHeight,rawRightRideHeight,
       rawFuelPressure,rawFuelTemperature,
       rawGearPosition,rawAirFuelRatio,
-      rawManifoldAbsolutePressure,rawExhaustGasTemperature
-      ) = raw_nano_data.split(',')
-      (lat,lon,alt,mph,utc) = gps_data.split(',')
+      rawManifoldAbsolutePressure,rawExhaustGasTemperature,
+      lat,lon,alt,mph,utc) = raw_data.split(',')
+
       # calcs and transforms
       fRpm = get_axle_rpm(int(deltaFrontCount),int(deltaFrontMicros))
-      # println(utc + ' FrontRPM' + fRpm)
       rRpm = get_axle_rpm(int(deltaRearCount),int(deltaRearMicros))
-      # println(utc + ' RearRPM' + rRpm)
       afr = get_afr(int(rawAirFuelRatio))
-      #### println(utc + ' RearRPM' + rRpm)
       man = get_map(int(rawManifoldAbsolutePressure))
       ft  = get_fuel_temperature(int(rawFuelTemperature))
       fp  = get_fuel_pressure(int(rawFuelPressure))
@@ -112,7 +89,6 @@ def get_readings(raw_nano_data,gps_data):
         print("exception in Decode:get_readings: " + str(e))
 
     #returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
-    #print('MPH ' + MPH + ' fRPM ' + fRpm + ' rRPM ' + rRpm + ' ' + UTC)
     return ( mph + ',' +
             fRpm + ',' +
             rRpm + ',' +
@@ -124,3 +100,39 @@ def get_readings(raw_nano_data,gps_data):
              rrh + ',' +
              utc
             )
+
+def get_reading(raw_data, column):
+  (mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc) = get_readings(raw_data)
+  readings = {'fRpm': fRpm, 'rRpm': rRpm, 'AFR': afr, 'MAP': map, 'FP': fpress}
+  return readings[column]
+
+
+
+# # # # #  MAIN # # # # 
+if len(sys.argv) != 2:
+  print('Error: supply path to raw file')
+  sys.exit()
+raw_file_path = sys.argv[1]
+if not os.path.isfile(raw_file_path):
+  print('Error: file not found at ' + raw_file_path)
+  sys.exit()
+if not 'raw' in raw_file_path:
+  print("Error: filename must have 'raw' in it. NoGood: " + raw_file_path)
+  sys.exit()
+data_file_path = raw_file_path.replace('raw','data')
+
+try:
+  with open(raw_file_path, 'r') as raw_file:
+    with open(data_file_path, 'w') as data_file:
+      data_file.write('mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc\n')
+      for line in raw_file:
+        if line.startswith('1'): # all epoch times will
+          data_file.write(get_readings(line)) 
+  print('Wrote data file to: ' + data_file_path)
+
+except Exception as e:
+  print('Exception in main loop: ' + str(e))
+  sys.exit()
+except:
+  print('Some non-Exception problem in main loop')
+
