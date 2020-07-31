@@ -102,37 +102,41 @@ def get_readings(raw_data):
             )
 
 def get_reading(raw_data, column):
-  (mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc) = get_readings(raw_data)
+  data = get_readings(raw_data)
+  (mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc) = data.split(',')
   readings = {'fRpm': fRpm, 'rRpm': rRpm, 'AFR': afr, 'MAP': map, 'FP': fpress}
-  return readings[column]
-
+  if column in readings:
+    return readings[column]
+  else:
+    return 'N/A'
 
 
 # # # # #  MAIN # # # # 
-if len(sys.argv) != 2:
-  print('Error: supply path to raw file')
-  sys.exit()
-raw_file_path = sys.argv[1]
-if not os.path.isfile(raw_file_path):
-  print('Error: file not found at ' + raw_file_path)
-  sys.exit()
-if not 'raw' in raw_file_path:
-  print("Error: filename must have 'raw' in it. NoGood: " + raw_file_path)
-  sys.exit()
-data_file_path = raw_file_path.replace('raw','data')
+if __name__ == "__main__":
+  if len(sys.argv) != 2:
+    print('Error: supply path to raw file')
+    sys.exit()
+  raw_file_path = sys.argv[1]
+  if not os.path.isfile(raw_file_path):
+    print('Error: file not found at ' + raw_file_path)
+    sys.exit()
+  if not 'raw' in raw_file_path:
+    print("Error: filename must have 'raw' in it. NoGood: " + raw_file_path)
+    sys.exit()
+  data_file_path = raw_file_path.replace('raw','data')
 
-try:
-  with open(raw_file_path, 'r') as raw_file:
-    with open(data_file_path, 'w') as data_file:
-      data_file.write('mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc\n')
-      for line in raw_file:
-        if line.startswith('1'): # all epoch times will
-          data_file.write(get_readings(line)) 
-  print('Wrote data file to: ' + data_file_path)
+  try:
+    with open(raw_file_path, 'r') as raw_file:
+      with open(data_file_path, 'w') as data_file:
+        data_file.write('mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc\n')
+        for line in raw_file:
+          if line.startswith('1'): # all epoch times will
+            data_file.write(get_readings(line)) 
+    print('Wrote data file to: ' + data_file_path)
 
-except Exception as e:
-  print('Exception in main loop: ' + str(e))
-  sys.exit()
-except:
-  print('Some non-Exception problem in main loop')
+  except Exception as e:
+    print('Exception in main loop: ' + str(e))
+    sys.exit()
+  except:
+    print('Some non-Exception problem in main loop')
 
