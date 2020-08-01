@@ -104,7 +104,7 @@ def get_readings(raw_data):
 def get_reading(raw_data, column):
   data = get_readings(raw_data)
   (mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc) = data.split(',')
-  readings = {'fRpm': fRpm, 'rRpm': rRpm, 'AFR': afr, 'MAP': map, 'FP': fpress}
+  readings = {'fRpm': fRpm, 'rRpm': rRpm, 'AFR': afr, 'MAP': map, 'FP': fpress, 'mph': mph}
   if column in readings:
     return readings[column]
   else:

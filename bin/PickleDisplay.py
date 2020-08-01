@@ -32,7 +32,7 @@ print('pygame display set')
 
 # start out with reading disabled
 get_live_reading = False
-readings = ['AFR','MAP','FP','fRPM','rRPM']
+readings = ['AFR','MAP','FP','fRpm','rRpm','mph']
 reading = 'AFR'
 # for 'live values', be able to walk through the possible signals.
 def switch_reading():
