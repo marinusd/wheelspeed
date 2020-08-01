@@ -18,6 +18,7 @@ data_dir = '/var/www/html/data'
 current_symlink = data_dir+'/current'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
+live_readings = data_dir+'/live_readings'
 
 nano_header = 'millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature'
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
@@ -112,25 +113,31 @@ def get_wheel_rpms(raw_nano_data):
     rRpm = get_wheel_rpm(deltaRearCount,deltaRearMicros)
     return(fRpm,rRpm)
 
-def write_raw_log_header():
-    global RAW_LOG_FILE
-    RAW_LOG_FILE.write('timestamp,' + nano_header + ',' + gps_header + '\n')
-
-def write_raw_log(timestamp,raw_nano_data,gps_data):
-    global RAW_LOG_FILE
-    RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + gps_data + '\n')
-
+def provision_for_live_readings():
+  try:
+    # clear the live reading flag on startup. Only the PickleDisplay sets it.
+    if os.path.isfile(live_readings):
+      os.remove(live_readings)
+    # PickleDisplay will tail the ./current symlink for a raw_data line
+    if os.path.islink(current_symlink):
+      os.remove(current_symlink)
+    os.symlink(raw_log_file_path,current_symlink)
+  except:
+    print('Error provisioning for live readings')
 
 ##### MAIN MAIN MAIN ###################################
 init_gps()
 init_nano()
 
+# our primary output is a .csv file of raw values. Writing this is Job #1.
+# if this open() fails, we should just die.
 RAW_LOG_FILE = open(raw_log_file_path,mode='w',buffering=1)
-if os.path.islink(current_symlink):
-  os.unlink(current_symlink)
-os.symlink(raw_log_file_path,current_symlink)
+RAW_LOG_FILE.write('timestamp,' + nano_header + ',' + gps_header + '\n')
 print('Writing raw log to ' + raw_log_file_path)
-write_raw_log_header()
+
+# secondary function is providing live data if commanded by the PickleDisplay.
+provision_for_live_readings()
+
 
 print('Starting sensor collection loop... Ctrl-C to stop loop')
 while True:
@@ -145,12 +152,10 @@ while True:
         raw_nano_data = get_raw_nano_data()
         (fRpm,rRpm) = get_wheel_rpms(raw_nano_data)
 
-        #print('MPH: ' + str(mph) + 'fRpm: ' + str(fRpm) + ' rRpm: ' + str(rRpm))
-	# only write if we are moving
-        if 1==1 or mph>1 or fRpm>1 or rRpm>1:
-          write_raw_log(timestamp, raw_nano_data, gps_data)
-        #else:
-        #  print("MPH: %s fRPM: %s rRPM: %s - not enough movement." % (str(mph),str(fRpm),str(rRpm)))
+	# only write if we are moving or doing live readings
+        if mph>1 or fRpm>1 or rRpm>1 or os.path.isfile(live_readings):
+          RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + gps_data + '\n')
+
     except KeyboardInterrupt:
         print("\nShutting down")
         break

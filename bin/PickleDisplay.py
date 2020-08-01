@@ -55,15 +55,19 @@ def fetch_reading():
 
 def ctl_reading(action):
   global get_live_reading
-  if action == 'start':
-    get_live_reading = True
-  elif action == 'stop':
-    get_live_reading = False
-  elif action == 'switch':
-    switch_reading()
-  else:
-    pass
-
+  try:
+    if action == 'start':
+      os.system('touch /var/www/html/data/live_readings')
+      get_live_reading = True
+    elif action == 'stop':
+      os.system('rm -f /var/www/html/data/live_readings')
+      get_live_reading = False
+    elif action == 'switch':
+      switch_reading()
+    else:
+      pass
+  except:
+    print('ctl_reading: error... of some sort')
 def show_live_reading():
   lcd.fill(CYAN)
   # first the header
@@ -93,13 +97,13 @@ button_map = {
   17:{'color':GREY, 'text':'Restarting Recorder',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
   22:{'color':GREEN,'text':'Starting Live Read',   'action':'start'},
   23:{'color':RED,  'text':'Stopping Live Read',   'action':'stop'},
-  27:{'color':BLUE, 'text':'Switching Read Source','action':'switch'}
+  27:{'color':BLUE, 'text':'Switching Read Signal','action':'switch'}
 } 
 options_map = { # key is the vertical position
   40:'Restart Recorder->', 
  100:'Start Live Read->', 
  160:'Stop Live Read->', 
- 220:'Switch Read Source->'
+ 220:'Switch Read Signal->'
 }
 
 
