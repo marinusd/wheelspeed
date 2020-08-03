@@ -47,26 +47,48 @@ def init_nano():
     else:
         print('Nano not open? How can be?')
 
+def set_system_time(gpstime):
+  if gpstime != None and gpstime != '':
+    #gpstime is formatted like"2015-04-01T17:32:04.000Z"
+    #convert it to a form the date -u command will accept: "20140401 17:32:04"
+    gpsutc = gpstime[0:4]+gpstime[5:7]+gpstime[8:10]+' '+gpstime[11:19]
+    print('Trying to set system time to GPS UTC: ' + gpsutc)
+    os.system('sudo date -u --set="%s"' % gpsutc)
+  else:
+    print('set_system_time: gpstime parameter null')
+
 def init_gps():
   i = 0
   while i < 9:
     try:
       gpsd.connect()   # gpsd daemon should be running in O.S.
+      break
     except Exception as e:
       print("init_gps: cannot connect to gpsd daemon: " +str(e))
+      i = i + 1
       time.sleep(1.5)
-      continue
+  i = 0
+  while i < 9:
     try:
       packet = gpsd.get_current()  # this will blow up if we are not connected
-      if (packet.mode > 1):   # then we have either a 2D or 3D fix
-        print('GPS position: ' + str(packet.position()))
-      else:
-        print('GPS: no position fix from device yet: ' + str(gpsd.device()))
       break
     except:
       print("init_gps:exception getting current position")
+      i = i + 1
       time.sleep(1.5)
-
+  i = 0
+  while i < 9:
+    try:
+      if (packet.mode > 1):   # then we have either a 2D or 3D fix
+        print('GPS position: ' + str(packet.position()))
+        set_system_time(packet.time)
+        break
+      else:
+        print('GPS: no position fix from device yet: ' + str(gpsd.device()))
+        i = i + 1
+        time.sleep(1.5)
+    except:
+      print("init_gps:exception reading packet or setting time")
 
 def get_raw_nano_data():
     global NANO
