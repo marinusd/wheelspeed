@@ -95,13 +95,13 @@ def show_options():
 
 ## BUTTON INPUT
 button_map = {
-  17:{'color':GREY, 'text':'Restarting Recorder',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
+  17:{'color':GREY, 'text':'Cycling Recorder & WiFi',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
   22:{'color':GREEN,'text':'Starting Live Read',   'action':'start'},
   23:{'color':RED,  'text':'Stopping Live Read',   'action':'stop'},
   27:{'color':BLUE, 'text':'Switching Read Signal','action':'switch'}
 } 
 options_map = { # key is the vertical position
-  40:'Restart Recorder->', 
+  40:'Restart Recorder & WiFi->',
  100:'Start Live Read->', 
  160:'Stop Live Read->', 
  220:'Switch Read Signal->'
@@ -136,6 +136,7 @@ while True:
         pygame.display.update()
         if 'os_cmd' in DICT:
 	  os.system(DICT['os_cmd'])
+	  os.system("sudo service hostapd restart")
         else:
           action = DICT['action']
           ctl_reading(DICT['action'])
