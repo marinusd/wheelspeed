@@ -13,7 +13,7 @@ import os
 # constants
 sleep_time = 0.2 # seconds
 serial_dev = '/dev/serial0' # NANO connected via rPi UART;
-serial_dev = '/dev/ttyUSB0' # NANO connected via rPi USB;
+#serial_dev = '/dev/ttyUSB0' # NANO connected via rPi USB;
 data_dir = '/var/www/html/data'
 current_symlink = data_dir+'/current'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
