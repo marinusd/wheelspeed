@@ -23,6 +23,7 @@ pygame.init()
 pygame.mouse.set_visible(False)
 font_30 = pygame.font.Font(None, 30)
 font_40 = pygame.font.Font(None, 40)
+font_50 = pygame.font.Font(None, 50)
 font_60 = pygame.font.Font(None, 60)
 lcd = pygame.display.set_mode((320, 240))
 lcd.fill(BLACK)
@@ -32,8 +33,8 @@ print('pygame display set')
 
 # start out with reading disabled
 get_live_reading = False
-readings = ['AFR','MAP','FP','fRpm','rRpm','mph']
-reading = 'AFR'
+readings = ['A/F Ratio','MAP','Fuel Pressure','Fuel Temp','Front Wheel RPM','Rear Wheel RPM','GPS MPH']
+reading = 'A/F Ratio'
 # for 'live values', be able to walk through the possible signals.
 def switch_reading():
   global reading
@@ -71,7 +72,7 @@ def ctl_reading(action):
 def show_live_reading():
   lcd.fill(CYAN)
   # first the header
-  text_surface = font_60.render('%s'%reading, True, BLACK)
+  text_surface = font_50.render('%s'%reading, True, BLACK)
   rect = text_surface.get_rect(center=(160,80))
   lcd.blit(text_surface, rect)
   pygame.display.update()
