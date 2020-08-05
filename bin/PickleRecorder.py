@@ -175,7 +175,7 @@ while True:
         (fRpm,rRpm) = get_wheel_rpms(raw_nano_data)
 
 	# only write if we are moving or doing live readings
-        if mph>1 or fRpm>1 or rRpm>1 or os.path.isfile(live_readings):
+        if mph>2 or fRpm>1 or rRpm>1 or os.path.isfile(live_readings):
           RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + gps_data + '\n')
 
     except KeyboardInterrupt:

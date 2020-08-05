@@ -22,6 +22,7 @@ os.putenv('SDL_FBDEV', '/dev/fb1')
 pygame.init()
 pygame.mouse.set_visible(False)
 font_30 = pygame.font.Font(None, 30)
+font_33 = pygame.font.Font(None, 33)
 font_40 = pygame.font.Font(None, 40)
 font_50 = pygame.font.Font(None, 50)
 font_60 = pygame.font.Font(None, 60)
@@ -33,26 +34,23 @@ print('pygame display set')
 
 # start out with reading disabled
 get_live_reading = False
-readings = ['A/F Ratio','MAP','Fuel Pressure','Fuel Temp','Front Wheel RPM','Rear Wheel RPM','GPS MPH']
-reading = 'A/F Ratio'
-# for 'live values', be able to walk through the possible signals.
-def switch_reading():
-  global reading
-  index = readings.index(reading)
-  index = index + 1
-  if index >= len(readings):
-    index = 0
-  reading = readings[index]
-
 # try to be independent of the PickleRecorder, just tail its output file.
 def fetch_reading():
-  value = '?!'
+  readings_map = {}
   try:
     raw_data_line = subprocess.check_output('tail -1 /var/www/html/data/current', shell=True)
-    value = Decoder.get_reading(raw_data_line, reading)
+    (mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc) = Decoder.get_readings(raw_data_line).split(',')
+    readings_map = {'GPS MPH':mph,
+	'Front Wheel RPM':fRpm,
+	'Rear Wheel RPM':rRpm,
+	'A/F Ratio':afr,
+	'MAP':map,
+	'Fuel Pressure':fpress,
+	'Fuel Temp':ftemp
+	}
   except Exception as e: # might be anything...
     print('Error in fetch_reading: ' + str(e))
-  return value
+  return readings_map
 
 def ctl_reading(action):
   global get_live_reading
@@ -63,26 +61,25 @@ def ctl_reading(action):
     elif action == 'stop':
       os.system('rm -f /var/www/html/data/live_readings')
       get_live_reading = False
-    elif action == 'switch':
-      switch_reading()
     else:
       pass
   except:
     print('ctl_reading: error... of some sort')
 def show_live_reading():
   lcd.fill(CYAN)
-  # first the header
-  text_surface = font_50.render('%s'%reading, True, BLACK)
-  rect = text_surface.get_rect(center=(160,80))
-  lcd.blit(text_surface, rect)
-  pygame.display.update()
-  # then the value
-  words = fetch_reading()
-  text_surface = font_60.render('%s'%words, True, BLACK)
-  rect = text_surface.get_rect(center=(160,160))
-  lcd.blit(text_surface, rect)
-  pygame.display.update()
-
+  readings_map = fetch_reading()
+  # we have seven readings, and 240 pixels total. 
+  row_increment = 33
+  row_center = 20 ## the offset from the top of the display
+  for name,value in readings_map.items():
+    text_surface = font_33.render('%s'%name, True, BLACK)
+    rect = text_surface.get_rect(center=(120,row_center))
+    lcd.blit(text_surface, rect)
+    text_surface = font_33.render('%s'%value, True, BLACK)
+    rect = text_surface.get_rect(center=(280,row_center))
+    lcd.blit(text_surface, rect)
+    pygame.display.update()
+    row_center = row_center + row_increment
 
 # show the startup
 def show_options():
@@ -95,18 +92,17 @@ def show_options():
 
 ## BUTTON INPUT
 button_map = {
-  17:{'color':GREY, 'text':'Cycling Recorder & WiFi',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
+  17:{'color':GREY, 'text':'Restarting Recorder',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
   22:{'color':GREEN,'text':'Starting Live Read',   'action':'start'},
   23:{'color':RED,  'text':'Stopping Live Read',   'action':'stop'},
-  27:{'color':BLUE, 'text':'Switching Read Signal','action':'switch'}
+  27:{'color':BLUE, 'text':'Restarting WiFi',      'os_cmd':'sudo service hostapd restart'}
 } 
 options_map = { # key is the vertical position
-  40:'Restart Recorder & WiFi->',
+  40:'Restart Recorder->',
  100:'Start Live Read->', 
  160:'Stop Live Read->', 
- 220:'Switch Read Signal->'
+ 220:'Restart WiFi->'
 }
-
 
   
 # # # MAIN # # # 
@@ -136,9 +132,7 @@ while True:
         pygame.display.update()
         if 'os_cmd' in DICT:
 	  os.system(DICT['os_cmd'])
-	  os.system("sudo service hostapd restart")
         else:
-          action = DICT['action']
           ctl_reading(DICT['action'])
         sleep(1.1)
     if not button_pressed:
