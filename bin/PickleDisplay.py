@@ -92,16 +92,16 @@ def show_options():
 
 ## BUTTON INPUT
 button_map = {
-  17:{'color':GREY, 'text':'Restarting Recorder',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
-  22:{'color':GREEN,'text':'Starting Live Read',   'action':'start'},
-  23:{'color':RED,  'text':'Stopping Live Read',   'action':'stop'},
-  27:{'color':BLUE, 'text':'Restarting WiFi',      'os_cmd':'sudo service hostapd restart'}
+  27:{'color':GREY, 'text':'Restarting Recorder',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
+  23:{'color':GREEN,'text':'Starting Live Read',   'action':'start'},
+  22:{'color':RED,  'text':'Stopping Live Read',   'action':'stop'},
+  17:{'color':BLUE, 'text':'Restarting WiFi',      'os_cmd':'sudo service hostapd restart'}
 } 
 options_map = { # key is the vertical position
-  40:'Restart Recorder->',
- 100:'Start Live Read->', 
- 160:'Stop Live Read->', 
- 220:'Restart WiFi->'
+  40:'<- Restart Recorder',
+ 100:'<- Start Live Read', 
+ 160:'<- Stop Live Read', 
+ 220:'<- Restart WiFi'
 }
 
   

@@ -12,8 +12,8 @@ import os
 
 # constants
 sleep_time = 0.2 # seconds
-serial_dev = '/dev/serial0' # /dev/ttyS0 # NANO connected via rPi UART;
-serial_dev = '/dev/ttyUSB1' # NANO connected via rPi USB;
+#serial_dev = '/dev/serial0' # /dev/ttyS0 # NANO connected via rPi UART;
+serial_dev = '/dev/ttyUSB0' # NANO connected via rPi USB;
 data_dir = '/var/www/html/data'
 current_symlink = data_dir+'/current'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
@@ -35,7 +35,7 @@ def init_nano():
     while not isOpen:
         try:
             # baud must match what's in the Arduino sketch
-            NANO = serial.Serial(serial_dev, 57600, timeout = 1)
+            NANO = serial.Serial(serial_dev, 38400, timeout = 1)
             NANO.close()
             NANO.open()
             isOpen = NANO.isOpen()
