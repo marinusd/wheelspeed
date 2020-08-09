@@ -1,5 +1,5 @@
 // Gen IV module sketch
-const long Version = 20200724;
+const long Version = 20200809;
 const char subVersion = 'a';
 
 // Digital Pins
@@ -55,7 +55,7 @@ char command = 'u';  // unassigned char
 // Get all the things lined up
 void setup ()
 {
-  Serial.begin(38400);
+  Serial.begin(57600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
