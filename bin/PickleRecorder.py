@@ -12,8 +12,8 @@ import os
 
 # constants
 sleep_time = 0.2 # seconds
-#serial_dev = '/dev/serial0' # /dev/ttyS0 # NANO connected via rPi UART;
-serial_dev = '/dev/ttyUSB0' # NANO connected via rPi USB;
+# see udev rules for device construction
+serial_dev = '/dev/NANO' # NANO connected via rPi USB;
 data_dir = '/var/www/html/data'
 current_symlink = data_dir+'/current'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
@@ -35,7 +35,7 @@ def init_nano():
     while not isOpen:
         try:
             # baud must match what's in the Arduino sketch
-            NANO = serial.Serial(serial_dev, 38400, timeout = 1)
+            NANO = serial.Serial(serial_dev, 57600, timeout = 1)
             NANO.close()
             NANO.open()
             isOpen = NANO.isOpen()
@@ -138,8 +138,8 @@ def get_wheel_rpms(raw_nano_data):
 def provision_for_live_readings():
   try:
     # clear the live reading flag on startup. Only the PickleDisplay sets it.
-    if os.path.isfile(live_readings):
-      os.remove(live_readings)
+    #if not os.path.isfile(live_readings):
+    #  os.remove(live_readings)
     # PickleDisplay will tail the ./current symlink for a raw_data line
     if os.path.islink(current_symlink):
       os.remove(current_symlink)
