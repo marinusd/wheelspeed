@@ -8,7 +8,7 @@ DAEMON=/var/www/bin/PickleDisplay.py
 PROCESS=$(basename $DAEMON)
 PREFIX=${PROCESS%.py}
 PIDFILE=/var/run/${PREFIX}.pid
-LOGFILE=/var/log/${PREFIX}.log
+LOGFILE=/var/log/pickle/${PREFIX}.log
 
 # tag each entry from this script
 NOW="$(date +%s) cron"
