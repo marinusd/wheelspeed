@@ -41,5 +41,6 @@ if [[ -n $RUNNING ]]; then
   : # running, so no output
 else
   echo "$NOW: ${PROCESS} not running, starting it"
-  start-stop-daemon --start --background --no-close --make-pidfile --pidfile $PIDFILE --exec $DAEMON -- >$LOGFILE 2>&1
+  start-stop-daemon --start --background --no-close --make-pidfile --pidfile $PIDFILE \
+   --exec $DAEMON >> $LOGFILE 2>&1
 fi

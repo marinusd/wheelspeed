@@ -4,7 +4,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 . /lib/lsb/init-functions
 
-DAEMON=/var/www/bin/PickleRecorder.py
+DAEMON=/var/www/bin/PickleGPS.py
 PROCESS=$(basename $DAEMON)
 PREFIX=${PROCESS%.py}
 PIDFILE=/var/run/${PREFIX}.pid
@@ -42,5 +42,5 @@ if [[ -n $RUNNING ]]; then
 else
   echo "$NOW: ${PROCESS} not running, starting it"
   start-stop-daemon --start --background --no-close --make-pidfile --pidfile $PIDFILE \
-   --exec $DAEMON >> $LOGFILE 2>&1
+    --exec $DAEMON >> $LOGFILE 2>&1
 fi

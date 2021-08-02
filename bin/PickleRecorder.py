@@ -7,8 +7,8 @@
 from datetime import datetime
 import time
 import serial  # pip3 install pyserial
-import gpsd    # pip3 install gpsd-py3 https://github.com/MartijnBraam/gpsd-py3
 import os
+from pathlib import Path
 
 # constants
 sleep_time = 0.2 # seconds
@@ -19,6 +19,7 @@ current_symlink = data_dir+'/current'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
 raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
 live_readings = data_dir+'/live_readings'
+position_file = "/mnt/ramdisk/POSITION"  ## written by PickleGPS.py
 
 nano_header = 'millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature'
 gps_header = 'latitude,longitude,altitudeFt,mph,utc'
@@ -47,49 +48,6 @@ def init_nano():
     else:
         print('Nano not open? How can be?')
 
-def set_system_time(gpstime):
-  if gpstime != None and gpstime != '':
-    #gpstime is formatted like"2015-04-01T17:32:04.000Z"
-    #convert it to a form the date -u command will accept: "20140401 17:32:04"
-    gpsutc = gpstime[0:4]+gpstime[5:7]+gpstime[8:10]+' '+gpstime[11:19]
-    print('Trying to set system time to GPS UTC: ' + gpsutc)
-    os.system('sudo date -u --set="%s"' % gpsutc)
-  else:
-    print('set_system_time: gpstime parameter null')
-
-def init_gps():
-  i = 0
-  while i < 9:
-    try:
-      gpsd.connect()   # gpsd daemon should be running in O.S.
-      break
-    except Exception as e:
-      print("init_gps: cannot connect to gpsd daemon: " +str(e))
-      i = i + 1
-      time.sleep(1.5)
-  i = 0
-  while i < 9:
-    try:
-      packet = gpsd.get_current()  # this will blow up if we are not connected
-      break
-    except:
-      print("init_gps:exception getting current position")
-      i = i + 1
-      time.sleep(1.5)
-  i = 0
-  while i < 9:
-    try:
-      if (packet.mode > 1):   # then we have either a 2D or 3D fix
-        print('GPS position: ' + str(packet.position()))
-        set_system_time(packet.time)
-        break
-      else:
-        print('GPS: no position fix from device yet: ' + str(gpsd.device()))
-        i = i + 1
-        time.sleep(1.5)
-    except:
-      print("init_gps:exception reading packet or setting time")
-
 def get_raw_nano_data():
     global NANO
     raw_nano_data = '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'
@@ -101,19 +59,15 @@ def get_raw_nano_data():
     return raw_nano_data
 
 def get_gps_data():
-    lat = lon = alt = mph = utc = '0' # make them numeric
     try:
-        packet = gpsd.get_current()
-        if (packet.mode >= 2):
-            lat = str(packet.lat)
-            lon = str(packet.lon)
-            mph = str(int(packet.hspeed * 2.2369363)) # speed in m/s, we use mph
-            utc = str(packet.time)
-        if (packet.mode >= 3):
-            alt = str(int(packet.alt * 3.2808399)) # alt in meters, we use feet
+        if os.stat(position_file).st_size > 0:
+           return Path(position_file).read_text()
+    except OSError:
+        print("No POSITION file found")
     except Exception as e:
         print("exception in get_gps_data: " + str(e))
-    return lat + ',' + lon + ',' + alt + ',' + mph + ',' + utc
+    # gps_header is defined above as: 'latitude,longitude,altitudeFt,mph,utc'
+    return '0.0,0.0,0,0,unknown'
 
 def get_wheel_rpm(pulseCount,elapsedMicros):
     micros_per_minute = 1000000 * 60 # microseconds
@@ -144,11 +98,10 @@ def provision_for_live_readings():
     if os.path.islink(current_symlink):
       os.remove(current_symlink)
     os.symlink(raw_log_file_path,current_symlink)
-  except:
-    print('Error provisioning for live readings')
+  except Exception as e:
+    print('Error provisioning for live readings;' + str(e))
 
 ##### MAIN MAIN MAIN ###################################
-init_gps()
 init_nano()
 
 # our primary output is a .csv file of raw values. Writing this is Job #1.
