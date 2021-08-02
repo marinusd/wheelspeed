@@ -129,7 +129,7 @@ while True:
 
 	# only write if we are moving or doing live readings
         if mph>2 or fRpm>1 or rRpm>1 or os.path.isfile(live_readings):
-          RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + gps_data + '\n')
+          RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + gps_data)
 
     except KeyboardInterrupt:
         print("\nShutting down")
