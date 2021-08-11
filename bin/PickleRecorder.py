@@ -122,7 +122,7 @@ while True:
         timestamp = datetime.now().strftime('%s.%f')[:-3]
 
         gps_data = get_gps_data()
-        mph = int(gps_data.split(',')[3])
+        mph = float(gps_data.split(',')[3])
 
         raw_nano_data = get_raw_nano_data()
         (fRpm,rRpm) = get_wheel_rpms(raw_nano_data)
