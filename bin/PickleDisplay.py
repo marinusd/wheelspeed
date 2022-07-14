@@ -65,6 +65,7 @@ def ctl_reading(action):
       pass
   except:
     print('ctl_reading: error... of some sort')
+
 def show_live_reading():
   lcd.fill(CYAN)
   readings_map = fetch_reading()
@@ -78,8 +79,9 @@ def show_live_reading():
     text_surface = font_33.render('%s'%value, True, BLACK)
     rect = text_surface.get_rect(center=(280,row_center))
     lcd.blit(text_surface, rect)
-    pygame.display.update()
     row_center = row_center + row_increment
+  lcd.blit(pygame.transform.rotate(lcd,180),(0,0))
+  pygame.display.update()
 
 # show the startup
 def show_options():
@@ -88,7 +90,8 @@ def show_options():
     text_surface = font_30.render('%s'%MESSAGE, True, BLACK)
     rect = text_surface.get_rect(center=(160,VERT_CENTER))
     lcd.blit(text_surface, rect)
-    pygame.display.update()
+  lcd.blit(pygame.transform.rotate(lcd,180),(0,0))
+  pygame.display.update()
 
 ## BUTTON INPUT
 button_map = {
@@ -98,10 +101,10 @@ button_map = {
   17:{'color':BLUE, 'text':'Restarting WiFi',      'os_cmd':'sudo service hostapd restart'}
 } 
 options_map = { # key is the vertical position
-  40:'<- Restart Recorder',
- 100:'<- Start Live Read', 
- 160:'<- Stop Live Read', 
- 220:'<- Restart WiFi'
+  40:'    Restart WiFi ->',
+ 100:'  Stop Live Read ->',
+ 160:' Start Live Read ->',
+ 220:'Restart Recorder ->'
 }
 
   
@@ -129,6 +132,7 @@ while True:
         text_surface = font_40.render('%s'%words, True, WHITE)
         rect = text_surface.get_rect(center=(160,120))
         lcd.blit(text_surface, rect)
+        lcd.blit(pygame.transform.rotate(lcd,180),(0,0))
         pygame.display.update()
         if 'os_cmd' in DICT:
 	  os.system(DICT['os_cmd'])
