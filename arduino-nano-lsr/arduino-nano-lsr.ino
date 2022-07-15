@@ -1,9 +1,8 @@
 // Gen IV module sketch
-const long Version = 20200809;
+const long Version = 20220715;
 const char subVersion = 'a';
 
 // Digital Pins
-// Pins 0 & 1 are for the UART to communicate with the rPi.
 // Pins 2 & 3 are interrupt-driven by Hall Effect sensors.
 // Pin 13 drives the on-board user LED.
 // No other digital pins are used.
@@ -48,7 +47,7 @@ const int pinFuelTemperature = A6; // blue
 int rawExhaustGasTemperature = 0;
 const int pinExhaustGasTemperature = A7; // small diameter white
 
-// Serial (UART) commands
+// Serial commands
 int incomingByte = 0;
 char command = 'u';  // unassigned char
 
@@ -71,7 +70,9 @@ void setup ()
   pinMode(ledPin, OUTPUT);
 
   // pullup the unused digital pins
-  // 0&1 are serial, 2&3 are wheel sensor
+  // 2&3 are wheel sensor pins
+  pinMode( 0, INPUT_PULLUP);
+  pinMode( 1, INPUT_PULLUP);
   pinMode( 4, INPUT_PULLUP);
   pinMode( 5, INPUT_PULLUP);
   pinMode( 6, INPUT_PULLUP);
@@ -87,7 +88,7 @@ void setup ()
 } // end of setup
 
 
-// Interrupt Service Routines for wheel speed sensors
+// Interrupt Service Routines for wheel speed sensors. ISRs are as short as possible.
 void frontPulseISR ()
 {
   frontCount++;
@@ -167,6 +168,8 @@ void printHeader() {
   Serial.println("rawExhaustGasTemperature");
 }
 void printOutput () {
+  // show we're processing a read
+  digitalWrite(ledPin, HIGH);
   collectReadings();
   Serial.print(millis());                     Serial.print(',');
   Serial.print(nowFrontCount);                Serial.print(',');
@@ -183,6 +186,7 @@ void printOutput () {
   Serial.print(rawAirFuelRatio);              Serial.print(',');
   Serial.print(rawManifoldAbsolutePressure);  Serial.print(',');
   Serial.println(rawExhaustGasTemperature);
+  digitalWrite(ledPin, LOW);
 }
 
 // The main() event
@@ -190,9 +194,6 @@ void loop ()
 {
   // we check for an incoming command
   if (Serial.available() > 0) {
-    // show we're processing a command
-    digitalWrite(ledPin, HIGH);
-
     command = '?';  // set a non-active value to start
     // throw away all but the last command byte
     while (Serial.available() > 0) {
@@ -221,9 +222,7 @@ void loop ()
         break;
     }
   } // the end of the if statement; we come here immediately when there's no incoming serial data
-
   delay(100); // pause a tenth of a second; a caller will wait on average 1/2 of that
-  digitalWrite(ledPin, LOW); // this may already be off
 
 }  // end of loop()
 
