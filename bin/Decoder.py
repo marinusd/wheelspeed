@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#  version 2020-07-31
+#  version 2022-07-15
 from datetime import datetime
 import time
 import sys
@@ -8,7 +8,7 @@ import os
 
 # constants
 micros_per_minute = 1000000 * 60 # microseconds
-analog_factor = 0.004887585  # 0 = 0V, 512 = ~2.5V, 1023 = 5V
+analog_factor = 0.004887585      # 0 = 0V, 512 = ~2.5V, 1023 = 5V
 
 def get_axle_rpm(pulseCount,elapsedMicros):
     # one magnet per wheel means one pulse per revolution
@@ -40,7 +40,7 @@ def get_fuel_pressure(pinValue):
 def get_fuel_temperature(pinValue):
     return str(int(pinValue * 100 / 1023))
 
-# the NTK gives a voltage from 0V-5V; the arduino turns that into a int between 0-1023
+# the NTK controller gives a voltage from 0V-5V; the arduino turns that into a int between 0-1023
 def get_afr(pinValue):
     voltage = pinValue * analog_factor  # convert from 10bits to voltage
     afr = (1.4 * voltage) + 9   # according to the NTK doc, 0V = 9.0, 5V = 16.0
@@ -50,12 +50,22 @@ def get_afr(pinValue):
 # the MAP gives a voltage from 0V-5V; the arduino turns that into a int between 0-1023
 def get_map(pinValue):
     voltage = pinValue * analog_factor  # convert from 10bits to voltage
-    # calibration... userReport:      11kPa = 0.25V, 307kPa = 4.75V
-      # y = 65.7778 x - 5.44444
-    # calibration... Motec Datasheet: 20kPa = 0.4V,  300kPa = 4.65V
-      # y = 65.8824 x - 6.35294
-    kpa = (65.83 * voltage) - 5.8986   # (averaged)
+
+    # Option One:  # https://www.robietherobot.com/storm/mapsensor.htm
+    # psi = (voltage * 8.94) - 14.53
+
+    # Option Two: From DIYautotune, calibration GM 3-bar ... Datasheet: 1.1kPa = 0V,  315.50kPa = 5V (linear)
+    # pinValueRef: range is: 315.5 - 1.1 = 314.4, divide the range by the number of pin values above zero: 314.4/1023  = .307331 per click
+    ## kpa = (.307331 * pinValue) + 1.1
+    # voltageRef: range is: 315.5 - 1.1 = 314.4, divide the range by the max volts: 314.4/5  = 62.88000
+    ## kpa = (62.88 * voltage) + 1.1
+
+    # Option Three: calibration of GM 3-bar, Ballenger Motorsports  https://www.bmotorsports.com/shop/product_info.php/cPath/129_143/products_id/1584?osCsid=dp41bpdfqtmg2habab5h8d3nh3
+    #             V = 0.0162 * P - 0.0179
+    #   algebra   P = (0.0179 + V) / 0.0162
+    kpa = (voltage + 0.0179) / 0.0162
     psi = kpa * 0.145038 # google says so
+
     #print("MAP pin: " + str(pinValue) + " V: " + str(voltage) + " kpa: " + str(kpa) + " psi: " + str(psi))
     (whole,fraction) = str(psi).split('.')
     map_val = whole + '.' + fraction[:1]  # return one fractional digit
