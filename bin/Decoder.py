@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#  version 2022-07-15
+#  version 2022-07-26
 from datetime import datetime
 import time
 import sys
@@ -55,17 +55,17 @@ def get_map(pinValue):
     # psi = (voltage * 8.94) - 14.53
 
     # Option Two: From DIYautotune, calibration GM 3-bar ... Datasheet: 1.1kPa = 0V,  315.50kPa = 5V (linear)
-    # pinValueRef: range is: 315.5 - 1.1 = 314.4, divide the range by the number of pin values above zero: 314.4/1023  = .307331 per click
-    ## kpa = (.307331 * pinValue) + 1.1
-    # voltageRef: range is: 315.5 - 1.1 = 314.4, divide the range by the max volts: 314.4/5  = 62.88000
-    ## kpa = (62.88 * voltage) + 1.1
+    #   pinValueRef: range is: 315.5 - 1.1 = 314.4, divide the range by the number of pin values above zero: 314.4/1023  = .307331 per click
+    # kpa = (.307331 * pinValue) + 1.1
+    #   voltageRef: range is: 315.5 - 1.1 = 314.4, divide the range by the max volts: 314.4/5  = 62.88000
+    kpa = (62.88 * voltage) + 2.1
 
     # Option Three: calibration of GM 3-bar, Ballenger Motorsports  https://www.bmotorsports.com/shop/product_info.php/cPath/129_143/products_id/1584?osCsid=dp41bpdfqtmg2habab5h8d3nh3
-    #             V = 0.0162 * P - 0.0179
-    #   algebra   P = (0.0179 + V) / 0.0162
-    kpa = (voltage + 0.0179) / 0.0162
-    psi = kpa * 0.145038 # google says so
+    #               V = 0.0162 * P - 0.0179
+    #     algebra   P = (0.0179 + V) / 0.0162
+    # kpa = (voltage + 0.0179) / 0.0162
 
+    psi = kpa * 0.145038 # google says so
     #print("MAP pin: " + str(pinValue) + " V: " + str(voltage) + " kpa: " + str(kpa) + " psi: " + str(psi))
     (whole,fraction) = str(psi).split('.')
     map_val = whole + '.' + fraction[:1]  # return one fractional digit
