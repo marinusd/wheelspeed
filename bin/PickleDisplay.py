@@ -31,26 +31,8 @@ lcd.fill(BLACK)
 pygame.display.update()
 print('pygame display set')
 
-
 # start out with reading disabled
 get_live_reading = False
-# try to be independent of the PickleRecorder, just tail its output file.
-def fetch_reading():
-  readings_map = {}
-  try:
-    raw_data_line = subprocess.check_output('tail -1 /var/www/html/data/current', shell=True)
-    (mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc) = Decoder.get_readings(raw_data_line).split(',')
-    readings_map = {'GPS MPH':mph,
-	'Front Wheel RPM':fRpm,
-	'Rear Wheel RPM':rRpm,
-	'A/F Ratio':afr,
-	'MAP':map,
-	'Fuel Pressure':fpress,
-	'Fuel Temp':ftemp
-	}
-  except Exception as e: # might be anything...
-    print('Error in fetch_reading: ' + str(e))
-  return readings_map
 
 def ctl_reading(action):
   global get_live_reading
@@ -66,11 +48,47 @@ def ctl_reading(action):
   except:
     print('ctl_reading: error... of some sort')
 
+def paint_row(text, row_center):
+    text_surface = font_33.render(text, True, BLACK)
+    rect = text_surface.get_rect(center=(160,row_center))
+    lcd.blit(text_surface, rect)
+
+# try to be independent of the PickleRecorder, just tail its output file.
 def show_live_reading():
+  try:
+    # grab the voltages, etc.
+    raw_data_line = subprocess.check_output('tail -1 /var/www/html/data/current', shell=True)
+    # Decoder turns those into values we can use
+    (mph,fRpm,rRpm,afr,man,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4) = Decoder.get_readings(raw_data_line).split(',')
+
+    lcd.fill(CYAN)
+    # we have twelve readings, and 240 pixels total. 
+    row_increment = 33
+    row_center = 20 ## the offset from the top of the display
+
+    text = 'MPH: ' + str(mph) + ' RPM: ' + str(rpm)
+    text_surface = font_33.render(text, True, BLACK)
+    rect = text_surface.get_rect(center=(160,row_center))
+    lcd.blit(text_surface, rect)
+
+    row_center = row_center + row_increment
+
+    text = 'AFR: ' + str(afr) + ' MAP: ' + str(man)
+    text_surface = font_33.render(text, True, BLACK)
+    rect = text_surface.get_rect(center=(160,row_center))
+    lcd.blit(text_surface, rect)
+    
+    lcd.blit(pygame.transform.rotate(lcd,180),(0,0))
+    pygame.display.update()
+
+  except Exception as e: # might be anything...
+    print('Error in fetch_reading: ' + str(e))
+
+def show_live_reading_old():
   lcd.fill(CYAN)
   readings_map = fetch_reading()
-  # we have seven readings, and 240 pixels total. 
-  row_increment = 33
+  # we have twelve readings, and 240 pixels total. 
+  row_increment = 20
   row_center = 20 ## the offset from the top of the display
   for name,value in readings_map.items():
     text_surface = font_33.render('%s'%name, True, BLACK)
@@ -135,7 +153,7 @@ while True:
         lcd.blit(pygame.transform.rotate(lcd,180),(0,0))
         pygame.display.update()
         if 'os_cmd' in DICT:
-	  os.system(DICT['os_cmd'])
+	        os.system(DICT['os_cmd'])
         else:
           ctl_reading(DICT['action'])
         sleep(1.1)
@@ -155,4 +173,3 @@ while True:
 
 # last act of a desperate program
 GPIO.cleanup()
-

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#  version 2020-07-29
+#  version 2022-08-12
 # Basic approach for reporting:
 #  1. Write a logfile with the raw values (RecordValues)
 #  2. Decode the values after the run. (Decode)
@@ -13,7 +13,8 @@ from pathlib import Path
 # constants
 sleep_time = 0.2 # seconds
 # see udev rules for device construction
-serial_dev = '/dev/NANO' # NANO connected via rPi USB;
+nano_dev  = '/dev/NANO'  # NANO  connected via rPi USB;
+nano2_dev = '/dev/NANO2' # NANO2 connected via rPi USB;
 data_dir = '/var/www/html/data'
 current_symlink = data_dir+'/current'
 file_timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
@@ -21,22 +22,23 @@ raw_log_file_path = data_dir + '/raw-' + file_timestamp + '.csv'
 live_readings = data_dir+'/live_readings'
 position_file = "/mnt/ramdisk/POSITION"  ## written by PickleGPS.py
 
-nano_header = 'millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature'
-gps_header = 'latitude,longitude,altitudeFt,mph,utc'
+#nano_header  = 'millis,frontCount,deltaFrontCount,deltaFrontMicros,rearCount,deltaRearCount,deltaRearMicros,rawLeftRideHeight,rawRightRideHeight,rawFuelPressure,rawFuelTemperature,rawGearPosition,rawAirFuelRatio,rawManifoldAbsolutePressure,rawExhaustGasTemperature'
+#nano2_header = 'millis2,camPositionCount,deltaCamPositionCount,deltaCamPositionMicros,rawEGT1,rawEGT2,rawEGT3,rawEGT4'
+gps_header   = 'latitude,longitude,altitudeFt,mph,utc'
 
 # globals
-NANO = 0
+NANO = NANO2 = 0
 RAW_LOG_FILE = 0
 
 ##### FUNCTIONS #############################################
-#initialize serial (UART) connection to arduino
+#initialize connections to arduinos
 def init_nano():
     global NANO
     isOpen = False
     while not isOpen:
         try:
             # baud must match what's in the Arduino sketch
-            NANO = serial.Serial(serial_dev, 57600, timeout = 1)
+            NANO = serial.Serial(nano_dev, 57600, timeout = 1)
             NANO.close()
             NANO.open()
             isOpen = NANO.isOpen()
@@ -48,6 +50,16 @@ def init_nano():
     else:
         print('Nano not open? How can be?')
 
+def get_nano_header():
+    global NANO
+    nano_header = '1000,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1000'
+    try:
+        NANO.write(str('h').encode())
+        nano_header = NANO.readline().decode('ascii').rstrip()
+    except Exception as e:
+        print("exception in get_nano_header: " + str(e))
+    return nano_header
+
 def get_raw_nano_data():
     global NANO
     raw_nano_data = '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'
@@ -57,6 +69,45 @@ def get_raw_nano_data():
     except Exception as e:
         print("exception in get_raw_nano_data: " + str(e))
     return raw_nano_data
+
+
+def init_nano2():
+    global NANO2
+    isOpen = False
+    while not isOpen:
+        try:
+            # baud must match what's in the Arduino sketch
+            NANO2 = serial.Serial(nano2_dev, 57600, timeout = 1)
+            NANO2.close()
+            NANO2.open()
+            isOpen = NANO2.isOpen()
+        except:
+            print("exception in init_nano2")
+            time.sleep(0.33)
+    if isOpen:
+        print('NANO2 open: ' + NANO2.portstr)
+    else:
+        print('NANO2 not open? How can be?')
+
+def get_nano2_header():
+    global NANO2
+    nano2_header = '2000,2,2,2,2,2,2,2000'
+    try:
+        NANO2.write(str('h').encode())
+        nano2_header = NANO2.readline().decode('ascii').rstrip()
+    except Exception as e:
+        print("exception in get_nano_header: " + str(e))
+    return nano2_header
+
+def get_raw_nano2_data():
+    global NANO2
+    raw_nano2_data = '0,0,0,0,0,0,0,0'
+    try:
+        NANO2.write(str('d').encode())
+        raw_nano2_data = NANO2.readline().decode('ascii').rstrip()
+    except Exception as e:
+        print("exception in get_raw_nano2_data: " + str(e))
+    return raw_nano2_data
 
 def get_gps_data():
     try:
@@ -103,11 +154,12 @@ def provision_for_live_readings():
 
 ##### MAIN MAIN MAIN ###################################
 init_nano()
+init_nano2()
 
 # our primary output is a .csv file of raw values. Writing this is Job #1.
 # if this open() fails, we should just die.
 RAW_LOG_FILE = open(raw_log_file_path,mode='w',buffering=1)
-RAW_LOG_FILE.write('timestamp,' + nano_header + ',' + gps_header + '\n')
+RAW_LOG_FILE.write('timestamp,' + get_nano_header() + ',' + get_nano2_header() + ',' + gps_header + '\n')
 print('Writing raw log to ' + raw_log_file_path)
 
 # secondary function is providing live data if commanded by the PickleDisplay.
@@ -125,11 +177,13 @@ while True:
         mph = float(gps_data.split(',')[3])
 
         raw_nano_data = get_raw_nano_data()
+        raw_nano2_data = get_raw_nano2_data()
+
         (fRpm,rRpm) = get_wheel_rpms(raw_nano_data)
 
 	# only write if we are moving or doing live readings
         if mph>2 or fRpm>1 or rRpm>1 or os.path.isfile(live_readings):
-          RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + gps_data)
+          RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data + ',' + raw_nano2_data + ',' + gps_data)
 
     except KeyboardInterrupt:
         print("\nShutting down")
