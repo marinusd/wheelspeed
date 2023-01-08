@@ -52,17 +52,15 @@ def fetch_reading():
     print('Error in fetch_reading: ' + str(e))
   return readings_map
 
-def ctl_reading(action):
+def ctl_reading(action):  # 'toggle' is the only action value
   global get_live_reading
   try:
-    if action == 'start':
-      os.system('touch /var/www/html/data/live_readings')
-      get_live_reading = True
-    elif action == 'stop':
+    if get_live_reading:
       os.system('rm -f /var/www/html/data/live_readings')
       get_live_reading = False
     else:
-      pass
+      os.system('touch /var/www/html/data/live_readings')
+      get_live_reading = True
   except:
     print('ctl_reading: error... of some sort')
 
@@ -95,16 +93,16 @@ def show_options():
 
 ## BUTTON INPUT
 button_map = {
-  27:{'color':GREY, 'text':'Restarting Recorder',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
-  23:{'color':GREEN,'text':'Starting Live Read',   'action':'start'},
-  22:{'color':RED,  'text':'Stopping Live Read',   'action':'stop'},
-  17:{'color':BLUE, 'text':'Restarting WiFi',      'os_cmd':'sudo service hostapd restart'}
+  17:{'color':BLUE, 'text':'Restarting WiFi',      'os_cmd':'sudo service hostapd restart'},
+  22:{'color':GREY, 'text':'Restarting Recorder',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
+  23:{'color':GREEN,'text':'Toggling Live Read',   'action':'toggle'},
+  27:{'color':RED,  'text':'Shutting Down Now',    'os_cmd':'sudo shutdown -h now'}
 } 
 options_map = { # key is the vertical position
   40:'    Restart WiFi ->',
- 100:'  Stop Live Read ->',
- 160:' Start Live Read ->',
- 220:'Restart Recorder ->'
+ 100:'Restart Recorder ->',
+ 160:'Toggle Live Read ->',
+ 220:'Shutdown picklePi->'
 }
 
   
@@ -135,7 +133,7 @@ while True:
         lcd.blit(pygame.transform.rotate(lcd,180),(0,0))
         pygame.display.update()
         if 'os_cmd' in DICT:
-	  os.system(DICT['os_cmd'])
+          os.system(DICT['os_cmd'])
         else:
           ctl_reading(DICT['action'])
         sleep(1.1)
