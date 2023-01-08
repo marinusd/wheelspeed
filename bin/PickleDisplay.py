@@ -32,21 +32,37 @@ lcd.fill(BLACK)
 pygame.display.update()
 print('pygame display set')
 
+# start out with reading disabled
+get_live_reading = False
+# try to be independent of the PickleRecorder, just tail its output file.
+def fetch_reading():
+  readings_map = {}
+  try:
+    raw_data_line = subprocess.check_output('tail -1 /var/www/html/data/current', shell=True)
+    (mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc) = Decoder.get_readings(raw_data_line).split(',')
+    readings_map = {'GPS MPH':mph,
+	'Front Wheel RPM':fRpm,
+	'Rear Wheel RPM':rRpm,
+	'A/F Ratio':afr,
+	'MAP':map,
+	'Fuel Pressure':fpress,
+	'Fuel Temp':ftemp
+	}
+  except Exception as e: # might be anything...
+    print('Error in fetch_reading: ' + str(e))
+  return readings_map
 
-def ctl_reading(action):
-    global get_live_reading
-    try:
-        if action == 'start':
-            os.system('touch /var/www/html/data/live_readings')
-            get_live_reading = True
-        elif action == 'stop':
-            os.system('rm -f /var/www/html/data/live_readings')
-            get_live_reading = False
-        else:
-            pass
-    except:
-        print('ctl_reading: error... of some sort')
-
+def ctl_reading(action):  # 'toggle' is the only action value
+  global get_live_reading
+  try:
+    if get_live_reading:
+      os.system('rm -f /var/www/html/data/live_readings')
+      get_live_reading = False
+    else:
+      os.system('touch /var/www/html/data/live_readings')
+      get_live_reading = True
+  except:
+    print('ctl_reading: error... of some sort')
 
 def paint_row(text, row_center):
     text_surface = font_36.render(text, True, BLACK)
@@ -111,16 +127,16 @@ def show_options():
 
 # BUTTON INPUT
 button_map = {
-    27: {'color': GREY, 'text': 'Restarting Recorder',  'os_cmd': '/var/www/bin/kill_recorder.sh'},
-    23: {'color': GREEN, 'text': 'Starting Live Read',   'action': 'start'},
-    22: {'color': RED,  'text': 'Stopping Live Read',   'action': 'stop'},
-    17: {'color': BLUE, 'text': 'Restarting WiFi',      'os_cmd': 'sudo service hostapd restart'}
-}
-options_map = {  # key is the vertical position
-    40: '    Restart WiFi ->',
-    100: '  Stop Live Read ->',
-    160: ' Start Live Read ->',
-    220: 'Restart Recorder ->'
+  17:{'color':BLUE, 'text':'Restarting WiFi',      'os_cmd':'sudo service hostapd restart'},
+  22:{'color':GREY, 'text':'Restarting Recorder',  'os_cmd':'/var/www/bin/kill_recorder.sh'},
+  23:{'color':GREEN,'text':'Toggling Live Read',   'action':'toggle'},
+  27:{'color':RED,  'text':'Shutting Down Now',    'os_cmd':'sudo shutdown -h now'}
+} 
+options_map = { # key is the vertical position
+  40:'    Restart WiFi ->',
+ 100:'Restart Recorder ->',
+ 160:'Toggle Live Read ->',
+ 220:'Shutdown picklePi->'
 }
 
 
@@ -139,37 +155,37 @@ show_options()
 
 # loop indefinitely
 while True:
-    try:
-        button_pressed = False
-        # Scan the buttons
-        for (BUTTON, DICT) in button_map.items():
-            if GPIO.input(BUTTON) == False:
-                button_pressed = True
-                lcd.fill(DICT['color'])
-                words = DICT['text']
-                text_surface = font_40.render('%s' % words, True, WHITE)
-                rect = text_surface.get_rect(center=(160, 120))
-                lcd.blit(text_surface, rect)
-                lcd.blit(pygame.transform.rotate(lcd, 180), (0, 0))
-                pygame.display.update()
-                if 'os_cmd' in DICT:
-                    os.system(DICT['os_cmd'])
-                else:
-                    ctl_reading(DICT['action'])
-                sleep(1.1)
-        if not button_pressed:
-            if get_live_reading:
-                show_live_reading()
-                sleep(0.2)
-            else:
-                show_options()
-                sleep(0.2)
+  try:
+    button_pressed = False
+    # Scan the buttons
+    for (BUTTON,DICT) in button_map.items():
+      if GPIO.input(BUTTON) == False:
+        button_pressed = True
+        lcd.fill(DICT['color'])
+        words = DICT['text']
+        text_surface = font_40.render('%s'%words, True, WHITE)
+        rect = text_surface.get_rect(center=(160,120))
+        lcd.blit(text_surface, rect)
+        lcd.blit(pygame.transform.rotate(lcd,180),(0,0))
+        pygame.display.update()
+        if 'os_cmd' in DICT:
+          os.system(DICT['os_cmd'])
+        else:
+          ctl_reading(DICT['action'])
+        sleep(1.1)
+    if not button_pressed:
+      if get_live_reading:
+        show_live_reading()
+        sleep(0.2)
+      else:
+        show_options()
+        sleep(0.2)
 
-    except KeyboardInterrupt:
-        print("Quitting on Ctrl-C")
-        break
-    except Exception as e:
-        print('Exception in display loop: ' + str(e))
+  except KeyboardInterrupt:
+    print("Quitting on Ctrl-C")
+    break
+  except Exception as e:
+    print('Exception in display loop: ' + str(e))
 
 # last act of a desperate program
 GPIO.cleanup()
