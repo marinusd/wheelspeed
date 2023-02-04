@@ -63,14 +63,15 @@ def paint_row_with_font(text, font, row_center):
 
 
 # try to be independent of the PickleRecorder, just tail its output file.
+#  The raw file has 29 elements separated by commas
 def show_live_reading():
     try:
         # grab the voltages, etc.
         raw_data_line = subprocess.check_output(
             'tail -1 /var/www/html/data/current', shell=True)
-        # Decoder turns those into values we can use
-        (mph, fRpm, rRpm, afr, man, ftemp, fpress, lrh, rrh, utc, rpm, egt1,
-         egt2, egt3, egt4) = Decoder.get_readings(raw_data_line).split(',')
+        # Decoder returns 15 values we can show
+        (mph, fRpm, rRpm, afr, man, ftemp, fpress, lrh, rrh, utc,
+         rpm, egt1, egt2, egt3, egt4) = Decoder.get_readings(raw_data_line).split(',')
 
         lcd.fill(CYAN)
         # we have six rows, in 240 pixels total.
@@ -82,8 +83,7 @@ def show_live_reading():
         row3 = ' FWHL: ' + str(fRpm) + '    RWHL: ' + str(rRpm) + ' '
         row4 = ' FTMP: ' + str(ftemp) + '    FPRS: ' + str(fpress) + ' '
         row5 = ' EGT1  EGT2  EGT3  EGT4 '
-        row6 = ' ' + str(egt1) + '    ' + str(egt2) + '    ' + \
-            str(egt3) + '    ' + str(egt4) + ' '
+        row6 = ' ' + str(egt1) + '    ' + str(egt2) + '    ' + str(egt3) + '    ' + str(egt4) + ' '
 
         paint_row(row1, row_center)
         row_center = row_center + row_increment

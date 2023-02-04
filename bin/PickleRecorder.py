@@ -52,7 +52,8 @@ def init_nano():
 
 def get_nano_header():
     global NANO
-    nano_header = '1000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1000'
+    nano_header = '1000,1,1,1,1,1,1,1,1,1,1,1,1,1,1000'
+                    # 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
     try:
         # clearing out the startup messages, yo
         junk = NANO.read(1000)
@@ -66,7 +67,8 @@ def get_nano_header():
 
 def get_raw_nano_data():
     global NANO
-    raw_nano_data = '1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1'
+    raw_nano_data = '1,1,1,1,1,1,1,1,1,1,1,1,1,1,1'
+                   # 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
     try:
         NANO.write(str('d').encode())
         raw_nano_data = NANO.readline().decode('ascii').rstrip()
@@ -96,7 +98,8 @@ def init_nano2():
 
 def get_nano2_header():
     global NANO2
-    nano2_header = '2000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2000'
+    nano2_header = '2000,2,2,2,2,2,2,2000'
+                     # 1 2 3 4 5 6 7 8
     try:
         # clearing out the startup messages, yo
         junk = NANO2.read(1000)
@@ -110,7 +113,8 @@ def get_nano2_header():
 
 def get_raw_nano2_data():
     global NANO2
-    raw_nano2_data = '2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2'
+    raw_nano2_data = '2,2,2,2,2,2,2,2'
+                    # 1 2 3 4 5 6 7 8
     try:
         NANO2.write(str('d').encode())
         raw_nano2_data = NANO2.readline().decode('ascii').rstrip()
@@ -128,7 +132,7 @@ def get_gps_data():
     except Exception as e:
         print("exception in get_gps_data: " + str(e))
     # gps_header is defined above as: 'latitude,longitude,altitudeFt,mph,utc'
-    return '0.0,0.0,0,0,unknown'
+    return '0.0,0.0,0,0,unknown' # 5 elements
 
 
 def get_wheel_rpm(pulseCount, elapsedMicros):
@@ -157,8 +161,6 @@ def get_wheel_rpms(raw_nano_data):
 def provision_for_live_readings():
     try:
         # clear the live reading flag on startup. Only the PickleDisplay sets it.
-        # if not os.path.isfile(live_readings):
-        #  os.remove(live_readings)
         # PickleDisplay will tail the ./current symlink for a raw_data line
         if os.path.islink(current_symlink):
             os.remove(current_symlink)
@@ -200,7 +202,7 @@ while True:
         # only write if we are moving or doing live readings
         if mph > 2 or fRpm > 1 or rRpm > 1 or os.path.isfile(live_readings):
             RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data +
-                               ',' + raw_nano2_data + ',' + gps_data)
+                               ',' + raw_nano2_data + ',' + gps_data) # 1+15+8+5=29 elements
 
     except KeyboardInterrupt:
         print("\nShutting down")

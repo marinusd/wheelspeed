@@ -91,7 +91,7 @@ def get_map(pinValue):
     return map_val
 
 
-def get_readings(raw_data):
+def get_readings(raw_data):   # fed 29 elements, returns 15 elements
     mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = '0'
     rpm = egt1 = egt2 = egt3 = egt4 = '0'
     try:
