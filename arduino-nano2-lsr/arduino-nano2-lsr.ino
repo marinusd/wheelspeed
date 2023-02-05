@@ -1,6 +1,5 @@
 // NANO2 module sketch
-const long Version    = 20230204;
-const char subVersion = 'a';
+const char Version[] = {"20230205.NANO2"};
 
 // Digital Pins
 // Pin 2 is interrupt-driven by a cam position (Hall Effect) sensor.
@@ -115,7 +114,7 @@ void collectReadings() {
 
 // one of these functions will be asked for by the Linux box
 void printSketchVersion() {
-  Serial.print("NANO2 Version: "); Serial.print(Version); Serial.println(subVersion);
+  Serial.print("NANO2 Version: "); Serial.println(Version);
 }
 void printHeader() {
   Serial.print("millis");                 Serial.print(',');

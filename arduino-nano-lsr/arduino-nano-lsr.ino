@@ -1,6 +1,5 @@
 // Gen IV module sketch for NANO (the original)
-const long Version = 20230204;
-const char subVersion = 'a';
+const char Version[] = {"20230205.NANO"};
 
 // Digital Pins
 // Pins 2 & 3 are interrupt-driven by Hall Effect sensors.
@@ -148,7 +147,7 @@ void collectReadings() {
 
 // one of these functions will be asked for by the Linux box
 void printSketchVersion() {
-  Serial.print("Version: "); Serial.print(Version); Serial.println(subVersion);
+  Serial.print("Version: "); Serial.println(Version);
 }
 void printHeader() {
   Serial.print("millis");                       Serial.print(',');
