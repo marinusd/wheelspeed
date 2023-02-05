@@ -1,22 +1,35 @@
 #!/usr/bin/env python3
 
-#  version 2022-07-26
+#  version 2022-08-13
 from datetime import datetime
 import time
 import sys
 import os
 
 # constants
-micros_per_minute = 1000000 * 60 # microseconds
+micros_per_minute = 1000000 * 60  # microseconds
 analog_factor = 0.004887585      # 0 = 0V, 512 = ~2.5V, 1023 = 5V
 
-def get_axle_rpm(pulseCount,elapsedMicros):
+
+def get_axle_rpm(pulseCount, elapsedMicros):
     # one magnet per wheel means one pulse per revolution
-    pulses_per_minute = 0
+    rpm = 0
     if pulseCount > 0:
-        average_pulse_micros = (elapsedMicros / pulseCount)  # each pulse took, on average
-        pulses_per_minute = micros_per_minute / average_pulse_micros
-    return str(int(pulses_per_minute)) # int throws away the fraction
+        # each pulse took, on average
+        average_pulse_micros = (elapsedMicros / pulseCount)
+        rpm = micros_per_minute / average_pulse_micros
+    return str(int(rpm))  # int throws away the fraction
+
+
+def get_engine_rpm(pulseCount, elapsedMicros):
+    # one pulse per cam rotation means two crank revolutions
+    doublePulseCount = pulseCount * 2
+    rpm = 0
+    if doublePulseCount > 0:
+        # each pulse-pair took, on average, this many ms
+        average_double_pulse_micros = (elapsedMicros / doublePulseCount)
+        rpm = micros_per_minute / average_double_pulse_micros
+    return str(int(rpm))  # int throws away the fraction
 
 # linear potentiometers give a voltage between 0V-3.3V;
 #   arduino encodes to an int 0-1023; and we want a range 0..100
@@ -40,11 +53,17 @@ def get_fuel_pressure(pinValue):
 def get_fuel_temperature(pinValue):
     return str(int(pinValue * 100 / 1023))
 
+# the EGT controller gives a voltage from 0V-5V; the arduino turns that into a int between 0-1023
+def get_egt(pinValue):
+    voltage = pinValue * analog_factor  # convert from 10bits to voltage
+    egt = (250 * voltage)  # reveltronics
+    return str(int(egt))
+
 # the NTK controller gives a voltage from 0V-5V; the arduino turns that into a int between 0-1023
 def get_afr(pinValue):
     voltage = pinValue * analog_factor  # convert from 10bits to voltage
     afr = (1.4 * voltage) + 9   # according to the NTK doc, 0V = 9.0, 5V = 16.0
-    (whole,fraction) = str(afr).split('.')
+    (whole, fraction) = str(afr).split('.')
     return whole + '.' + fraction[:1]  # return one fractional digit
 
 # the MAP gives a voltage from 0V-5V; the arduino turns that into a int between 0-1023
@@ -67,87 +86,81 @@ def get_map(pinValue):
 
     psi = kpa * 0.145038 # google says so
     #print("MAP pin: " + str(pinValue) + " V: " + str(voltage) + " kpa: " + str(kpa) + " psi: " + str(psi))
-    (whole,fraction) = str(psi).split('.')
+    (whole, fraction) = str(psi).split('.')
     map_val = whole + '.' + fraction[:1]  # return one fractional digit
     return map_val
 
-def get_readings(raw_data):
-    mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = '0'
-    try:
-      # cook the raw data
-      (timestamp,millis,
-      frontCount,deltaFrontCount,deltaFrontMicros,
-      rearCount,deltaRearCount,deltaRearMicros,
-      rawLeftRideHeight,rawRightRideHeight,
-      rawFuelPressure,rawFuelTemperature,
-      rawGearPosition,rawAirFuelRatio,
-      rawManifoldAbsolutePressure,rawExhaustGasTemperature,
-      lat,lon,alt,mph,utc) = raw_data.split(',')
 
-      # calcs and transforms
-      fRpm = get_axle_rpm(int(deltaFrontCount),int(deltaFrontMicros))
-      rRpm = get_axle_rpm(int(deltaRearCount),int(deltaRearMicros))
-      afr = get_afr(int(rawAirFuelRatio))
-      man = get_map(int(rawManifoldAbsolutePressure))
-      ft  = get_fuel_temperature(int(rawFuelTemperature))
-      fp  = get_fuel_pressure(int(rawFuelPressure))
-      lrh = get_ride_height(int(rawLeftRideHeight))
-      rrh = get_ride_height(int(rawRightRideHeight))
-      #gp  = get_gear_position(int(rawGearPosition))
-      #egt = get_egt(int(rawExhaustGasTemperature))
+def get_readings(raw_data):   # fed 29 elements, returns 15 elements
+    mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = '0'
+    rpm = egt1 = egt2 = egt3 = egt4 = '0'
+    try:
+        # cook the raw data
+        (timestamp, millis,
+         frontCount, deltaFrontCount, deltaFrontMicros,
+         rearCount, deltaRearCount, deltaRearMicros,
+         rawLeftRideHeight, rawRightRideHeight,
+         rawFuelPressure, rawFuelTemperature,
+         rawGearPosition, rawAirFuelRatio,
+         rawManifoldAbsolutePressure, rawExhaustGasTemperature,
+         millis2,
+         camPositionCount, deltaCamPositionCount, deltaCamPositionMicros,
+         rawEGT1, rawEGT2, rawEGT3, rawEGT4,
+         lat, lon, alt, mph, utc) = raw_data.split(',')
+
+        # calcs and transforms
+        fRpm = get_axle_rpm(int(deltaFrontCount), int(deltaFrontMicros))
+        rRpm = get_axle_rpm(int(deltaRearCount), int(deltaRearMicros))
+        afr = get_afr(int(rawAirFuelRatio))
+        man = get_map(int(rawManifoldAbsolutePressure))
+        ft = get_fuel_temperature(int(rawFuelTemperature))
+        fp = get_fuel_pressure(int(rawFuelPressure))
+        lrh = get_ride_height(int(rawLeftRideHeight))
+        rrh = get_ride_height(int(rawRightRideHeight))
+        rpm = get_engine_rpm(int(deltaCamPositionCount), int(deltaCamPositionMicros))
+        egt1 = get_egt(int(rawEGT1))
+        egt2 = get_egt(int(rawEGT2))
+        egt3 = get_egt(int(rawEGT3))
+        egt4 = get_egt(int(rawEGT4))
     except Exception as e:
         print("exception in Decode:get_readings: " + str(e))
 
-    #returnCols = 'mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc'
-    return ( mph + ',' +
-            fRpm + ',' +
-            rRpm + ',' +
-             afr + ',' +
-             man + ',' +
-              ft + ',' +
-              fp + ',' +
-             lrh + ',' +
-             rrh + ',' +
-             utc
+    #returnCols = 'mph,fRpm,rRpm,afr,man,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4'
+    return (mph + ',' + fRpm + ',' + rRpm + ','
+            + afr + ',' + man + ','
+            + ft + ',' + fp + ','
+            + lrh + ',' + rrh + ','
+            + utc + ',' + rpm + ','
+            + egt1 + ',' + egt2 + ','
+            + egt3 + ',' + egt4
             )
 
-def get_reading(raw_data, column):
-  data = get_readings(raw_data)
-  (mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc) = data.split(',')
-  readings = {'Front Wheel RPM': fRpm, 'Rear Wheel RPM': rRpm, 'A/F Ratio': afr, 'MAP': map, 
-              'Fuel Pressure': fpress, 'Fuel Temp': ftemp, 'GPS MPH': mph}
-  if column in readings:
-    return readings[column]
-  else:
-    return 'N/A'
 
-
-# # # # #  MAIN # # # # 
+# # # # #  MAIN # # # #
 if __name__ == "__main__":
-  if len(sys.argv) != 2:
-    print('Error: supply path to raw file')
-    sys.exit()
-  raw_file_path = sys.argv[1]
-  if not os.path.isfile(raw_file_path):
-    print('Error: file not found at ' + raw_file_path)
-    sys.exit()
-  if not 'raw' in raw_file_path:
-    print("Error: filename must have 'raw' in it. NoGood: " + raw_file_path)
-    sys.exit()
-  data_file_path = raw_file_path.replace('raw','data')
+    if len(sys.argv) != 2:
+        print('Error: supply path to raw file')
+        sys.exit()
+    raw_file_path = sys.argv[1]
+    if not os.path.isfile(raw_file_path):
+        print('Error: file not found at ' + raw_file_path)
+        sys.exit()
+    if not 'raw' in raw_file_path:
+        print("Error: filename must have 'raw' in it. NoGood: " + raw_file_path)
+        sys.exit()
+    data_file_path = raw_file_path.replace('raw', 'data')
 
-  try:
-    with open(raw_file_path, 'r') as raw_file:
-      with open(data_file_path, 'w') as data_file:
-        data_file.write('mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc\n')
-        for line in raw_file:
-          if line.startswith('1'): # all epoch times will
-            data_file.write(get_readings(line)) 
-    print('Wrote data file to: ' + data_file_path)
+    try:
+        with open(raw_file_path, 'r') as raw_file:
+            with open(data_file_path, 'w') as data_file:
+                data_file.write('mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4\n')
+                for line in raw_file:
+                    if line.startswith('1'):  # all epoch times will
+                        data_file.write(get_readings(line))
+        print('Wrote data file to: ' + data_file_path)
 
-  except Exception as e:
-    print('Exception in main loop: ' + str(e))
-    sys.exit()
-  except:
-    print('Some non-Exception problem in main loop')
-
+    except Exception as e:
+        print('Exception in main loop: ' + str(e))
+        sys.exit()
+    except:
+        print('Some non-Exception problem in main loop')

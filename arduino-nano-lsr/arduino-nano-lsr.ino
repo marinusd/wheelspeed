@@ -1,5 +1,5 @@
-// Gen IV module sketch
-const long Version = 20220715;
+// Gen IV module sketch for NANO (the original)
+const long Version = 20230204;
 const char subVersion = 'a';
 
 // Digital Pins
@@ -185,7 +185,7 @@ void printOutput () {
   Serial.print(rawGearPosition);              Serial.print(',');
   Serial.print(rawAirFuelRatio);              Serial.print(',');
   Serial.print(rawManifoldAbsolutePressure);  Serial.print(',');
-  Serial.println(rawExhaustGasTemperature);
+  Serial.println(rawExhaustGasTemperature);   // 15 elements total
   digitalWrite(ledPin, LOW);
 }
 

@@ -1,5 +1,5 @@
 // NANO2 module sketch
-const long Version    = 20220812;
+const long Version    = 20230204;
 const char subVersion = 'a';
 
 // Digital Pins
@@ -138,7 +138,7 @@ void printOutput () {
   Serial.print(rawEGT1);                Serial.print(',');
   Serial.print(rawEGT2);                Serial.print(',');
   Serial.print(rawEGT3);                Serial.print(',');
-  Serial.println(rawEGT4);
+  Serial.println(rawEGT4);              // 8 elements total
   digitalWrite(ledPin, LOW);
 }
 
