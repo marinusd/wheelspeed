@@ -156,7 +156,7 @@ if __name__ == "__main__":
                 data_file.write('mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4\n')
                 for line in raw_file:
                     if line.startswith('1'):  # all epoch times will
-                        data_file.write(get_readings(line))
+                        data_file.write(get_readings(line.rstrip()) + '\n')
         print('Wrote data file to: ' + data_file_path)
 
     except Exception as e:

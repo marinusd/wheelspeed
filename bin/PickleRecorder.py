@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 
 # constants
-sleep_time = 0.2  # seconds
+sleep_time = 0.25  # seconds
 # see udev rules for device construction
 nano_dev = '/dev/NANO'  # NANO  connected via rPi USB;
 nano2_dev = '/dev/NANO2'  # NANO2 connected via rPi USB;
@@ -202,7 +202,7 @@ while True:
         # only write if we are moving or doing live readings
         if mph > 2 or fRpm > 1 or rRpm > 1 or os.path.isfile(live_readings):
             RAW_LOG_FILE.write(timestamp + ',' + raw_nano_data +
-                               ',' + raw_nano2_data + ',' + gps_data) # 1+15+8+5=29 elements
+                               ',' + raw_nano2_data + ',' + gps_data + '\n') # 1+15+8+5=29 elements
 
     except KeyboardInterrupt:
         print("\nShutting down")
