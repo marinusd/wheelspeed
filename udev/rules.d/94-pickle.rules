@@ -2,5 +2,6 @@
 KERNEL=="ttyUSB[0-9]", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", SYMLINK+="GPS"
 
 #Bus 001 Device 005: ID 0403:6001 Future Technology Devices International, Ltd FT232 Serial (UART) IC
-KERNEL=="ttyUSB[0-9]", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", SYMLINK+="NANO"
-
+KERNEL=="ttyUSB[0-9]", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="A10LV3E4", SYMLINK+="NANO"
+KERNEL=="ttyUSB[0-9]", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="17CPB011001", SYMLINK+="NANO2"
+# get the `serial` values with `lsusb -v`
