@@ -126,8 +126,11 @@ def get_raw_nano2_data():
 def get_gps_data():
     try:
         if os.stat(position_file).st_size > 0:
-	    # trim trailing whitespace
-            return Path(position_file).read_text().strip()
+           position = Path(position_file).read_text().strip()  # trim trailing whitespace
+           (latitude,longitude,altitudeFloat,mphFloat,utc) = position.split(',')
+           altitudeFt = altitudeFloat.split('.')[0] # truncate the string
+           mph = mphFloat.split('.')[0]
+           return latitude + ',' + longitude + ',' + altitudeFt + ',' + mph + ',' + utc
     except OSError:
         print("No POSITION file found")
     except Exception as e:
