@@ -126,13 +126,14 @@ def get_raw_nano2_data():
 def get_gps_data():
     try:
         if os.stat(position_file).st_size > 0:
-            return Path(position_file).read_text()
+	    # trim trailing whitespace
+            return Path(position_file).read_text().strip()
     except OSError:
         print("No POSITION file found")
     except Exception as e:
         print("exception in get_gps_data: " + str(e))
     # gps_header is defined above as: 'latitude,longitude,altitudeFt,mph,utc'
-    return '0.0,0.0,0,0,unknown' # 5 elements
+    return '0.0,0.0,0,0,unknown' # 5 elements, no newline
 
 
 def get_wheel_rpm(pulseCount, elapsedMicros):

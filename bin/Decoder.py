@@ -124,6 +124,7 @@ def get_readings(raw_data):   # fed 29 elements, returns 15 elements
         egt4 = get_egt(int(rawEGT4))
     except Exception as e:
         print("exception in Decode:get_readings: " + str(e))
+        print("RawData: " + raw_data)
 
     #returnCols = 'mph,fRpm,rRpm,afr,man,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4'
     return (mph + ',' + fRpm + ',' + rRpm + ','
