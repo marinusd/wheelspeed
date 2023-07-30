@@ -76,13 +76,14 @@ def show_live_reading():
         lcd.fill(CYAN)
         # we have six rows, in 240 pixels total.
         row_increment = 36
-        row_center = row_increment  # the offset from the top of the display
+        row_center = row_increment / 2  # the offset from the top of the display
 
         row1 = ' MPH: ' + str(mph)      + '    RPM: ' + str(rpm) + ' '
         row2 = ' AFR: ' + str(afr)      + '    MAP: ' + str(man) + ' '
         row3 = ' FtRPM: ' + str(fRpm)   + '    RrRPM: ' + str(rRpm) + ' '
         row4 = ' FuelT: ' + str(ftemp)  + '    FuelP: ' + str(fpress) + ' '
-        row5 = ' EGT1  EGT2  EGT3  EGT4 '
+        row4b ='LRideH: ' + str(lrh)    + '   RRideH: ' + str(rrh) + ' '
+        row5 = 'EGT1   EGT2  EGT3   EGT4'
         row6 = ' ' + str(egt1) + '    ' + str(egt2) + '    ' + str(egt3) + '    ' + str(egt4) + ' '
 
         paint_row(row1, row_center)
@@ -92,9 +93,11 @@ def show_live_reading():
         paint_row(row3, row_center)
         row_center = row_center + row_increment
         paint_row(row4, row_center)
-        row_center = row_center + row_increment + 2
+        row_center = row_center + row_increment
+        paint_row(row4b, row_center)
+        row_center = row_center + row_increment
         paint_row_with_font(row5, font_33, row_center)
-        row_center = row_center + row_increment - 4
+        row_center = row_center + row_increment - 8
         paint_row(row6, row_center)
 
         lcd.blit(pygame.transform.rotate(lcd, 180), (0, 0))
