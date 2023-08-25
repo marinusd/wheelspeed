@@ -71,15 +71,15 @@ def show_live_reading():
             'tail -1 /var/www/html/data/current', shell=True)
         # Decoder returns 15 values we can show
         (mph, fRpm, rRpm, afr, man, ftemp, fpress, lrh, rrh, utc,
-         rpm, egt1, egt2, egt3, egt4) = Decoder.get_readings(raw_data_line).split(',')
+         rpm, egt1, egt2, egt3, egt4, act) = Decoder.get_readings(raw_data_line).split(',')
 
         lcd.fill(CYAN)
         # we have six rows, in 240 pixels total.
         row_increment = 36
         row_center = row_increment / 2  # the offset from the top of the display
 
-        row1 = ' MPH: ' + str(mph)      + '    RPM: ' + str(rpm) + ' '
-        row2 = ' AFR: ' + str(afr)      + '    MAP: ' + str(man) + ' '
+        row1 = ' ACT: ' + str(act)      + '     RPM: '  + str(rpm) + ' '
+        row2 = ' AFR: ' + str(afr)      + '     MAP: '  + str(man) + ' '
         row3 = ' FtRPM: ' + str(fRpm)   + '    RrRPM: ' + str(rRpm) + ' '
         row4 = ' FuelT: ' + str(ftemp)  + '    FuelP: ' + str(fpress) + ' '
         row4b ='LRideH: ' + str(lrh)    + '   RRideH: ' + str(rrh) + ' '

@@ -1,5 +1,5 @@
 // NANO2 module sketch
-const char Version[] = {"20230205.NANO2"};
+const char Version[] = {"20230825.NANO2"};
 
 // Digital Pins
 // Pin 2 is interrupt-driven by a cam position (Hall Effect) sensor.
@@ -25,11 +25,12 @@ const int ledPin =  LED_BUILTIN; // fetches the number of the LED pin
 // Analog Pins
 //  analogRead() returns ints between 0-1023
 // 0V-5V input pins
-int rawEGT1, rawEGT2, rawEGT3, rawEGT4 = 0;
+int rawEGT1, rawEGT2, rawEGT3, rawEGT4, rawACT = 0;
 const int pinEGT1 = A1; 
 const int pinEGT2 = A2; 
 const int pinEGT3 = A3; 
-const int pinEGT4 = A4; 
+const int pinEGT4 = A4;
+const int pinACT  = A5;
 
 // Serial commands
 int incomingByte = 0;
@@ -110,6 +111,7 @@ void collectReadings() {
   rawEGT2 = analogRead(pinEGT2);
   rawEGT3 = analogRead(pinEGT3);
   rawEGT4 = analogRead(pinEGT4);
+  rawACT  = analogRead(pinACT);
 }
 
 // one of these functions will be asked for by the Linux box
@@ -124,7 +126,8 @@ void printHeader() {
   Serial.print("rawEGT1");                Serial.print(',');
   Serial.print("rawEGT2");                Serial.print(',');
   Serial.print("rawEGT3");                Serial.print(',');
-  Serial.println("rawEGT4");            
+  Serial.print("rawEGT4");                Serial.print(',');
+  Serial.println("rawACT");
 }
 void printOutput () {
   // show we're processing a read
@@ -137,7 +140,8 @@ void printOutput () {
   Serial.print(rawEGT1);                Serial.print(',');
   Serial.print(rawEGT2);                Serial.print(',');
   Serial.print(rawEGT3);                Serial.print(',');
-  Serial.println(rawEGT4);              // 8 elements total
+  Serial.print(rawEGT4);                Serial.print(',');
+  Serial.println(rawACT);              // 9 elements total
   digitalWrite(ledPin, LOW);
 }
 

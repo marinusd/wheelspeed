@@ -90,10 +90,19 @@ def get_map(pinValue):
     map_val = whole + '.' + fraction[:1]  # return one fractional digit
     return map_val
 
+# the ACT sensor gives a voltage from 0V-5V; the arduino turns that into a int between 0-1023
+def get_act(pinValue):
+    voltage = pinValue * analog_factor  # convert from 10bits to voltage
+    # we linearize that (though it's actually a curve) with two points and a fixed 3077 ohm R1 in a voltage divider
+    # Ballenger chart says: 0C=9256 ohms, 35C=1778 ohms, that's 32F=9256, 95F=1778, 32F=3.753V, 95F=1.831V
+    # 63 degrees cover 1.922 volts, so .03051 volts per degree is the increment
+    act = (voltage / -.03051) + 155 # it's inverse, so we multiply by the inverse of the increment
+    (whole, fraction) = str(act).split('.')
+    return whole + '.' + fraction[:1]  # return one fractional digit
 
-def get_readings(raw_data):   # fed 29 elements, returns 15 elements
+def get_readings(raw_data):   # fed 30 elements, returns 16 elements
     mph = fRpm = rRpm = afr = man = ft = fp = lrh = rrh = utc = '0'
-    rpm = egt1 = egt2 = egt3 = egt4 = '0'
+    rpm = egt1 = egt2 = egt3 = egt4 = act = '0'
     try:
         # cook the raw data
         (timestamp, millis,
@@ -105,7 +114,7 @@ def get_readings(raw_data):   # fed 29 elements, returns 15 elements
          rawManifoldAbsolutePressure, rawExhaustGasTemperature,
          millis2,
          camPositionCount, deltaCamPositionCount, deltaCamPositionMicros,
-         rawEGT1, rawEGT2, rawEGT3, rawEGT4,
+         rawEGT1, rawEGT2, rawEGT3, rawEGT4, rawACT,
          lat, lon, alt, mph, utc) = raw_data.split(',')
 
         # calcs and transforms
@@ -122,18 +131,20 @@ def get_readings(raw_data):   # fed 29 elements, returns 15 elements
         egt2 = get_egt(int(rawEGT2))
         egt3 = get_egt(int(rawEGT3))
         egt4 = get_egt(int(rawEGT4))
+        act  = get_act(int(rawACT))
     except Exception as e:
         print("exception in Decode:get_readings: " + str(e))
         print("RawData: " + raw_data)
 
-    #returnCols = 'mph,fRpm,rRpm,afr,man,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4'
+    #returnCols = 'mph,fRpm,rRpm,afr,man,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4,act'
     return (mph + ',' + fRpm + ',' + rRpm + ','
             + afr + ',' + man + ','
             + ft + ',' + fp + ','
             + lrh + ',' + rrh + ','
             + utc + ',' + rpm + ','
             + egt1 + ',' + egt2 + ','
-            + egt3 + ',' + egt4
+            + egt3 + ',' + egt4 + ','
+            + act
             )
 
 
@@ -154,7 +165,7 @@ if __name__ == "__main__":
     try:
         with open(raw_file_path, 'r') as raw_file:
             with open(data_file_path, 'w') as data_file:
-                data_file.write('mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4\n')
+                data_file.write('mph,fRpm,rRpm,afr,map,ftemp,fpress,lrh,rrh,utc,rpm,egt1,egt2,egt3,egt4,act\n')
                 for line in raw_file:
                     if line.startswith('1'):  # all epoch times will
                         data_file.write(get_readings(line.rstrip()) + '\n')
